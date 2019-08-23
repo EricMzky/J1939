@@ -1,58 +1,36 @@
-﻿/*********************************************************************
- *
- *            J1939 Main Source Code
- *
- *********************************************************************
- *
- *	本程序是由XieTongXueFlyMe对现有的J1939协议文档分析，和对前辈的贡献总结,
- * 写出的一套开源的J1939驱动。
- *	本协议特点：
- *		1.易移植（不针对特定的CAN硬件，只要满足CAN2.0B即可）
- *		2.轻量级（可适应低端的MCU）
- *		3.支持多任务调用接口（可用于嵌入式系统）
- *		4.双模式（轮询或者中断，逻辑更加简单明了）
- *		5.不掉帧（数据采用收发列队缓存）
- *
- *  源代码下载：
- *		https://github.com/XeiTongXueFlyMe/J1939
- *  源代码临时手册Web站点：
- *		https://xeitongxueflyme.github.io/j1939doc.github.io/
- *
- * Version     Date        Description
- * -------------------------------------------------------------------
- * v1.0.0     2017/06/04    首个版本 Version 1 测试版发布
- * v1.0.1     2017/08/04    完善功能
- * v1.1.0     2017/11/22    Version 1 稳定发布版
- * v2.0.1     2017/11/24    Version 2 测试版发布
- * v2.0.2     2018/01/03    解决V2.0.1 遗留问题
- * v2.1.0     2018/01/20    Version 2 稳定发布版
- * Author               Date         changes
- *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- *XeiTongXueFlyMe       7/06/04      首个版本
- *XeiTongXueFlyMe       7/08/04      增加对TP的支持
- *XeiTongXueFlyMe       7/11/24      增加对多路CAN硬件的收发，和报文处理
- *XeiTongXueFlyMe       7/11/29      增加请求和响应API
- *XeiTongXueFlyMe       7/12/07      重做TP接受API函数
- *XeiTongXueFlyMe       7/12/08      增加软件滤波器
- *XeiTongXueFlyMe       8/01/03      重做接受发送API，简化协议栈初始化调用逻辑
- **********************************************************************/
-#ifndef __J1939_H 
-#define __J1939_H 
-/******************************类型声明*********************************/
-#define FALSE 0
-#define TRUE 1
+/********************************************************************
+*XXXXXX System Development XXXXX.XXXX Software
+*Copyright (c) 2019-2029, XXX LTD., All rights reserved.
+*File Name:   DeviceCAN.h
+*File Description: Implementation of  J1939.h
+*Modification History:
+*v1.0.0: 
+	*a	2017/06/04	XeiTongXueFlyMe		首个版本
+*v1.0.1:  
+	*a	2017/08/04	XeiTongXueFlyMe	   	增加对TP的支持
+*v2.0.1:
+	*a	2017/11/24	XeiTongXueFlyMe	   	增加对多路CAN硬件的收发，和报文处理
+	*b	2017/11/29	XeiTongXueFlyMe	   	增加请求和响应API
+	*c  2017/12/07	XeiTongXueFlyMe	   	重做TP接受API函数
+	*d  2017/12/08	XeiTongXueFlyMe	   	增加软件滤波器
+*v2.0.2:
+	*a	2018/01/03	XeiTongXueFlyMe	   	重做接受发送API，简化协议栈初始化调用逻辑
+*v2.1.0:
+	*a	2019/08/19  15:43:08 WangLin	Created
+********************************************************************/
 
-/** 统一类型定义
- *  不同的单片机的编译器， int,short,long 的位数可能不同
- *
- *  在移植J1939协议栈时，首先应该配置这里
- */
-typedef unsigned int   j1939_uint32_t;  /** < 32位无符号整形*/
-typedef int   		   j1939_int32_t;   /** < 32位整形*/
-typedef unsigned short j1939_uint16_t;  /** < 16位无符号整形*/
-typedef unsigned char  j1939_uint8_t;   /** < 8位无符号整形*/
-typedef char           j1939_int8_t;    /** < 8位无符号整形*/
-#define J1939_NULL     0
+#ifndef __J1939_H_INCLUDE_ 
+#define __J1939_H_INCLUDE_
+
+#include "TypeDefinition.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+#pragma  pack()
+
+
+/******************************类型声明*********************************/
 
 //函数返回代码
 #define RC_SUCCESS			    0  /**< 成功*/
@@ -77,7 +55,7 @@ typedef char           j1939_int8_t;    /** < 8位无符号整形*/
  
 // J1939 定义的地址
 #define J1939_GLOBAL_ADDRESS			255 /**< 全局地址*/
-#define J1939_NULL_ADDRESS			    254 /**< 空地址*/
+#define NULL_ADDRESS			    254 /**< 空地址*/
  
 //J1939协议栈的PNG请求响应，相关的定义
 #define J1939_PF_REQUEST2				201  /**< J1939协议栈的请求 PF */
@@ -170,10 +148,10 @@ typedef struct
 */
 typedef struct
 {
-	j1939_uint32_t PGN ;  /**< J1939的消息对象的 PGN*/
-	j1939_uint8_t  data[J1939_TP_MAX_MESSAGE_LENGTH] ;/**< J1939的消息对象的 数据*/
-	j1939_uint16_t byte_count;/**< J1939的消息对象的 数据大小*/
-	j1939_uint8_t  SA;   /**< J1939的消息对象的 目标地址（发送目的地  或  接受来源地）*/
+	UINT32 PGN ;  /**< J1939的消息对象的 PGN*/
+	UINT8  data[J1939_TP_MAX_MESSAGE_LENGTH] ;/**< J1939的消息对象的 数据*/
+	UINT16 byte_count;/**< J1939的消息对象的 数据大小*/
+	UINT8  SA;   /**< J1939的消息对象的 目标地址（发送目的地  或  接受来源地）*/
 
 } J1939_MESSAGE_T ;
 /**J1939消息对象的结构体
@@ -182,11 +160,11 @@ typedef struct
 */
 typedef struct
 {
-    j1939_uint8_t *data;        /**< 缓存区指针*/
-    j1939_uint16_t data_num;    /**< 缓存区大小*/
-    j1939_uint8_t SA;           /**< J1939的消息对象的 数据 源地址*/
-    j1939_uint16_t byte_count;  /**< J1939的消息对象的 数据大小*/
-    j1939_uint32_t PGN ;        /**< J1939的消息对象的 PGN*/
+    UINT8 *data;        /**< 缓存区指针*/
+    UINT16 data_num;    /**< 缓存区大小*/
+    UINT8 SA;           /**< J1939的消息对象的 数据 源地址*/
+    UINT16 byte_count;  /**< J1939的消息对象的 数据大小*/
+    UINT32 PGN ;        /**< J1939的消息对象的 PGN*/
 }TP_RX_MESSAGE;
 /**J1939_TP_Tx_Step枚举
 *
@@ -209,10 +187,10 @@ typedef enum
 typedef struct
 {
 	J1939_MESSAGE_T       tp_tx_msg;           /**< J1939的消息对象*/
-	j1939_uint16_t        time;                /**< 时间*/
-	j1939_uint8_t         packet_offset_p;     /**< 数据包偏移指针*/
-	j1939_uint8_t         packets_total;       /**< 总共有多少个数据包*/
-	j1939_uint8_t         packets_request_num; /**< 请求发送的数据包数（接受方准备接受的数据包数）*/
+	UINT16        time;                /**< 时间*/
+	UINT8         packet_offset_p;     /**< 帧数据包偏移指针*/
+	UINT8         packets_total;       /**< 总共有多少个帧数据包*/
+	UINT8         packets_request_num; /**< 请求发送的帧数据包数（接受方准备接受的数据包数）*/
 	J1939_TP_Tx_Step      state ;              /**< 协议的发送步骤*/
 } J1939_TRANSPORT_TX_INFO;
 /**J1939_TP_Rx_Step枚举
@@ -235,10 +213,10 @@ typedef enum
 typedef struct
 {
 	J1939_MESSAGE_T    	 tp_rx_msg; /**< J1939的消息对象*/
-	j1939_uint8_t		 osbusy;    /**< 此位置1，代表系统繁忙，cpu需要处理其他的事物，直接拒绝一切的链接请求\n 如果正在接受中，此位置1，则会发出链接保持消息帧。*/
-	j1939_uint16_t    	 time;		/**< 时间*/
-	j1939_uint8_t        packets_total; /**< 总共有多少个数据包*/
-	j1939_uint8_t        packets_ok_num;/**< 已经接受的数据包数*/
+	UINT8		 osbusy;    /**< 此位置1，代表系统繁忙，cpu需要处理其他的事物，直接拒绝一切的链接请求\n 如果正在接受中，此位置1，则会发出链接保持消息帧。*/
+	UINT16    	 time;		/**< 时间*/
+	UINT8        packets_total; /**< 总共有多少个数据包*/
+	UINT8        packets_ok_num;/**< 已经接受的数据包数*/
 	J1939_TP_Rx_Step     state ;     /**< 协议的接受步骤*/
 } J1939_TRANSPORT_RX_INFO;
 
@@ -248,12 +226,12 @@ typedef struct
 * @note 实现Request_PGN 的响应
 */
 struct Request_List{
-	j1939_uint8_t  *data;
-	j1939_uint16_t lenght;
-	j1939_uint32_t PGN;
+	UINT8  *data;
+	UINT16 lenght;
+	UINT32 PGN;
 	CAN_NODE       Can_Node;
-	void (*update)();  /**< 在函数里需要对data更新，如果不用更新data赋值为J1939_NULL*/
-	struct Request_List *next;   /**< 链表末尾，需要一直保持J1939_NULL*/
+	void (*update)();  /**< 在函数里需要对data更新，如果不用更新data赋值为NULL*/
+	struct Request_List *next;   /**< 链表末尾，需要一直保持NULL*/
 };
 
 // J1939 Data Structures 
@@ -270,18 +248,18 @@ struct Request_List{
 */	
 struct j1939_PID
 { 
-	j1939_uint8_t	DataPage			: 1;  /**< 数据页*/
-	j1939_uint8_t	Res 				: 1;  /**< Res位*/
-	j1939_uint8_t	Priority			: 3;  /**< 优先级*/
-	j1939_uint8_t	Reserve 			: 3;  /**< 空闲*/
-	j1939_uint8_t	PDUFormat;				  /**< PF*/
-	j1939_uint8_t	PDUSpecific;			  /**< PS*/
-	j1939_uint8_t	SourceAddress;			  /**< SA*/
-	j1939_uint8_t	DataLength			: 4;  /**< 数据长度*/
-	j1939_uint8_t	RTR 				: 4;  /**< RTR位*/
-	j1939_uint8_t	Data[J1939_DATA_LENGTH];  /**< 数据*/
-	j1939_uint32_t	PGN 				:24;  /**< 参数群编号*/
-	j1939_uint32_t	ReservePGN			: 8;  /**< 空闲*/
+	UINT8	DataPage			: 1;  /**< 数据页*/
+	UINT8	Res 				: 1;  /**< Res位*/
+	UINT8	Priority			: 3;  /**< 优先级*/
+	UINT8	Reserve 			: 3;  /**< 空闲*/
+	UINT8	PDUFormat;				  /**< PF*/
+	UINT8	PDUSpecific;			  /**< PS*/
+	UINT8	SourceAddress;			  /**< SA*/
+	UINT8	DataLength			: 4;  /**< 数据长度*/
+	UINT8	RTR 				: 4;  /**< RTR位*/
+	UINT8	Data[J1939_DATA_LENGTH];  /**< 数据*/
+	UINT32	PGN 				:24;  /**< 参数群编号*/
+	UINT32	ReservePGN			: 8;  /**< 空闲*/
 };
 
 /** J1939_MESSAGE_UNION 结构体
@@ -293,7 +271,7 @@ union J1939_MESSAGE_UNION
 { 
 
 	struct j1939_PID Mxe;  /**< j1939 的 ID 组成结构体*/
-	j1939_uint8_t		Array[J1939_MSG_LENGTH + J1939_DATA_LENGTH]; /**< 联合体数组，方便快速处理结构体赋值*/
+	UINT8		Array[J1939_MSG_LENGTH + J1939_DATA_LENGTH]; /**< 联合体数组，方便快速处理结构体赋值*/
 };
 
 #define GroupExtension 		PDUSpecific 
@@ -303,20 +281,40 @@ union J1939_MESSAGE_UNION
 */
 typedef union J1939_MESSAGE_UNION J1939_MESSAGE; 
 
+#pragma anon_unions
 union J1939_FLAGS_UNION
 { 
 	struct 
 	{ 
-		j1939_uint8_t	TransmitMessagesdCover				: 1;  //发送数据时，J1939协议接受缓存有数据覆盖
-		j1939_uint8_t	ReceivedMessagesdCoverOrDroppedNode	: 3;
-		j1939_uint8_t	ReceivedMessagesdCover				: 1;  //接受数据时，J1939协议接受缓存有数据覆盖
-		j1939_uint8_t	ReceivedMessagesDropped				: 1;  //接受数据时，J1939协议接受缓存有数据溢出
-   }; 
-	  j1939_uint8_t		FlagVal; 
+		UINT8	TransmitMessagesdCover				: 1;  //发送数据时，J1939协议接受缓存有数据覆盖
+		UINT8	ReceivedMessagesdCoverOrDroppedNode	: 3;
+		UINT8	ReceivedMessagesdCover				: 1;  //接受数据时，J1939协议接受缓存有数据覆盖
+		UINT8	ReceivedMessagesDropped				: 1;  //接受数据时，J1939协议接受缓存有数据溢出
+	}; 
+	UINT8 FlagVal; 
 }; 
 
 typedef union J1939_FLAGS_UNION J1939_FLAG; 
 
+/******************************wanglin******************************************/
+typedef struct _CAN_QUEUE
+{
+	UINT8 Head;
+	UINT8 Tail;
+	UINT8 Count;
+	J1939_MESSAGE Msg[3];	
+
+}CAN_QUEUE;
+
+typedef enum _can_node_id
+{
+	CAN_NODE_1 = 1,
+	CAN_NODE_2 = 2,
+	CAN_NODE_3 = 3,
+	CAN_NODE_4 = 4,
+	
+	CAN_NODES = 4
+}can_node_id;
 /********************************************API**************************************************************/
 
 //初始化函数
@@ -326,20 +324,25 @@ extern void			    J1939_ISR( );
 //心跳函数,定时被调用
 extern void 			J1939_Poll( );
 //读取单帧消息
-extern j1939_uint8_t	J1939_Read_Message( J1939_MESSAGE *MsgPtr, CAN_NODE  _Can_Node);
+extern UINT8	J1939_Read_Message( J1939_MESSAGE *MsgPtr, CAN_NODE  _Can_Node);
 //发送单帧消息
-extern j1939_uint8_t  	J1939_Send_Message( J1939_MESSAGE *MsgPtr, CAN_NODE  _Can_Node);
+extern UINT8  	J1939_Send_Message( J1939_MESSAGE *MsgPtr, CAN_NODE  _Can_Node);
 //多帧（多组）消息发送函数  (RTS/CTS传输协议)
-extern j1939_int8_t 	J1939_TP_TX_Message(j1939_uint32_t PGN, j1939_uint8_t DA, j1939_uint8_t *data, j1939_uint16_t data_num, CAN_NODE  _Can_Node);
+extern INT8 	J1939_TP_TX_Message(UINT32 PGN, UINT8 DA, UINT8 *data, UINT16 data_num, CAN_NODE  _Can_Node);
 //多帧（多组）消息接受函数  (RTS/CTS传输协议)
-extern j1939_int8_t 	J1939_TP_RX_Message(TP_RX_MESSAGE *msg, CAN_NODE _Can_Node);
+extern INT8 	J1939_TP_RX_Message(TP_RX_MESSAGE *msg, CAN_NODE _Can_Node);
 //请求获去一个PGN
-extern void             J1939_Request_PGN(j1939_uint32_t pgn ,j1939_uint8_t DA, CAN_NODE  _Can_Node);
+extern void             J1939_Request_PGN(UINT32 pgn ,UINT8 DA, CAN_NODE  _Can_Node);
 //创建一个PGN响应
-extern void             J1939_Create_Response(j1939_uint8_t data[], j1939_uint16_t dataLenght, j1939_uint32_t PGN, void (*dataUPFun)(), CAN_NODE  _Can_Node);
+extern void             J1939_Create_Response(UINT8 data[], UINT16 dataLenght, UINT32 PGN, void (*dataUPFun)(), CAN_NODE  _Can_Node);
 
 
-#endif //__J1939_H
+#pragma  pack()
+#ifdef __cplusplus
+}
+#endif
 
+#endif /*!defined(__J1939_H_INCLUDE_)*/
 
  
+  

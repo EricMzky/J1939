@@ -1,31 +1,29 @@
-﻿/*********************************************************************
- *
- * Version     Date        Description
- * -------------------------------------------------------------------
- * v1.0.0     2017/06/04    首个版本 Version 1 测试版发布
- * v1.0.1     2017/08/04    完善功能
- * v1.1.0     2017/11/22    Version 1 稳定发布版
- * v2.0.1     2017/11/24    Version 2 测试版发布
- * v2.0.2     2018/01/03    解决V2.0.1 遗留问题
- * v2.1.0     2018/01/20    Version 2 稳定发布版
- * Author               Date         changes
- *~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- *XeiTongXueFlyMe       7/06/04      首个版本
- *XeiTongXueFlyMe       7/08/04      增加对TP的支持
- *XeiTongXueFlyMe       7/11/24      增加对多路CAN硬件的收发，和报文处理
- *XeiTongXueFlyMe       7/11/29      增加请求和响应API
- *XeiTongXueFlyMe       7/12/07      重做TP接受API函数
- *XeiTongXueFlyMe       7/12/08      增加软件滤波器
- *XeiTongXueFlyMe       8/01/03      重做接受发送API，简化协议栈初始化调用逻辑
- *wanglin       		2019/08/20   修改.c文件中includeJ1939_Config.h书写错误
- *wanglin       		2019/08/21   修改书写规范
- **********************************************************************/
+/********************************************************************
+*XXXXXX System Development XXXXX.XXXX Software
+*Copyright (c) 2019-2029, XXX LTD., All rights reserved.
+*File Name:   DeviceCAN.h
+*File Description: Implementation of  J1939.c
+*Modification History:
+*v1.0.0: 
+	*a	2017/06/04	XeiTongXueFlyMe		首个版本
+*v1.0.1:  
+	*a	2017/08/04	XeiTongXueFlyMe	   	增加对TP的支持
+*v2.0.1:
+	*a	2017/11/24	XeiTongXueFlyMe	   	增加对多路CAN硬件的收发，和报文处理
+	*b	2017/11/29	XeiTongXueFlyMe	   	增加请求和响应API
+	*c  2017/12/07	XeiTongXueFlyMe	   	重做TP接受API函数
+	*d  2017/12/08	XeiTongXueFlyMe	   	增加软件滤波器
+*v2.0.2:
+	*a	2018/01/03	XeiTongXueFlyMe	   	重做接受发送API，简化协议栈初始化调用逻辑
+*v2.1.0:
+	*a	2019/08/19  15:43:08 WangLin	Created
+********************************************************************/
+#include <assert.h>
+
 
 #include "J1939.h"   
-#include "J1939_Config.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
+#include "CanCommunication.h"
+
 
 #define J1939_TRUE         1	/**< 代表函数正确返回*/
 #define J1939_FALSE        0	/**< 代表函数错误返回*/
@@ -38,58 +36,60 @@
  *	我们需要在"J1939_config.H"中配置
  *	@note 在初始化中赋值，赋值参考参考1939-81文档
  */
-j1939_uint8_t                   CA_Name[J1939_DATA_LENGTH];
-j1939_uint8_t                   CommandedAddress; 
+UINT8                   CA_Name[J1939_DATA_LENGTH];
+UINT8                   CommandedAddress; 
  
-j1939_uint8_t                   J1939_Address;   
-J1939_FLAG                      J1939_Flags;   
-J1939_MESSAGE                   OneMessage;   
-CAN_NODE                        Can_Node;
+UINT8                   J1939_Address;   
+J1939_FLAG              J1939_Flags;   
+J1939_MESSAGE           OneMessage;   
+CAN_NODE                Can_Node;
 //节点地址
-j1939_uint8_t					NodeAddress_1;
-j1939_uint8_t					NodeAddress_2;
-j1939_uint8_t					NodeAddress_3;
-j1939_uint8_t					NodeAddress_4;
+UINT8					NodeAddress_1;
+UINT8					NodeAddress_2;
+UINT8					NodeAddress_3;
+UINT8					NodeAddress_4;
+
 //接受列队全局变量(CAN_NODE_1) 
-j1939_uint8_t                   RXHead_1;
-j1939_uint8_t                   RXTail_1;
-j1939_uint8_t                   RXQueueCount_1;
-J1939_MESSAGE                   RXQueue_1[J1939_RX_QUEUE_SIZE];
+UINT8                   RXHead_1;
+UINT8                   RXTail_1;
+UINT8                   RXQueueCount_1;
+J1939_MESSAGE           RXQueue_1[J1939_RX_QUEUE_SIZE];
 //发送列队全局变量 (CAN_NODE_1)
-j1939_uint8_t                   TXHead_1;
-j1939_uint8_t                   TXTail_1;
-j1939_uint8_t                   TXQueueCount_1;
-J1939_MESSAGE                   TXQueue_1[J1939_TX_QUEUE_SIZE];
+UINT8                   TXHead_1;
+UINT8                   TXTail_1;
+UINT8                   TXQueueCount_1;
+J1939_MESSAGE           TXQueue_1[J1939_TX_QUEUE_SIZE];
 //接受列队全局变量(CAN_NODE_2)
-j1939_uint8_t                   RXHead_2;
-j1939_uint8_t                   RXTail_2;
-j1939_uint8_t                   RXQueueCount_2;
-J1939_MESSAGE                   RXQueue_2[J1939_RX_QUEUE_SIZE];
+UINT8                   RXHead_2;
+UINT8                   RXTail_2;
+UINT8                   RXQueueCount_2;
+J1939_MESSAGE           RXQueue_2[J1939_RX_QUEUE_SIZE];
 //发送列队全局变量 (CAN_NODE_2)
-j1939_uint8_t                   TXHead_2;
-j1939_uint8_t                   TXTail_2;
-j1939_uint8_t                   TXQueueCount_2;
-J1939_MESSAGE                   TXQueue_2[J1939_TX_QUEUE_SIZE];
+UINT8                   TXHead_2;
+UINT8                   TXTail_2;
+UINT8                   TXQueueCount_2;
+J1939_MESSAGE           TXQueue_2[J1939_TX_QUEUE_SIZE];
 //接受列队全局变量(CAN_NODE_3)
-j1939_uint8_t                   RXHead_3;
-j1939_uint8_t                   RXTail_3;
-j1939_uint8_t                   RXQueueCount_3;
-J1939_MESSAGE                   RXQueue_3[J1939_RX_QUEUE_SIZE];
+UINT8                   RXHead_3;
+UINT8                   RXTail_3;
+UINT8                   RXQueueCount_3;
+J1939_MESSAGE           RXQueue_3[J1939_RX_QUEUE_SIZE];
 //发送列队全局变量 (CAN_NODE_3)
-j1939_uint8_t                   TXHead_3;
-j1939_uint8_t                   TXTail_3;
-j1939_uint8_t                   TXQueueCount_3;
-J1939_MESSAGE                   TXQueue_3[J1939_TX_QUEUE_SIZE];
+UINT8                   TXHead_3;
+UINT8                   TXTail_3;
+UINT8                   TXQueueCount_3;
+J1939_MESSAGE           TXQueue_3[J1939_TX_QUEUE_SIZE];
 //接受列队全局变量(CAN_NODE_4)
-j1939_uint8_t                   RXHead_4;
-j1939_uint8_t                   RXTail_4;
-j1939_uint8_t                   RXQueueCount_4;
-J1939_MESSAGE                   RXQueue_4[J1939_RX_QUEUE_SIZE];
+UINT8                   RXHead_4;
+UINT8                   RXTail_4;
+UINT8                   RXQueueCount_4;
+J1939_MESSAGE           RXQueue_4[J1939_RX_QUEUE_SIZE];
 //发送列队全局变量 (CAN_NODE_4)
-j1939_uint8_t                   TXHead_4;
-j1939_uint8_t                   TXTail_4;
-j1939_uint8_t                   TXQueueCount_4;
-J1939_MESSAGE                   TXQueue_4[J1939_TX_QUEUE_SIZE];
+UINT8                   TXHead_4;
+UINT8                   TXTail_4;
+UINT8                   TXQueueCount_4;
+J1939_MESSAGE           TXQueue_4[J1939_TX_QUEUE_SIZE];
+
 
 struct Request_List REQUEST_LIST;
 
@@ -105,10 +105,10 @@ J1939_TRANSPORT_TX_INFO         TP_TX_MSG;
 
 
 /***************************define fountion*************************/
-void SetAddressFilter(j1939_uint8_t Address);
+void SetAddressFilter(UINT8 Address);
 void SendOneMessage(J1939_MESSAGE *MsgPtr);
 
-void J1939_Response(const j1939_uint32_t PGN);
+void J1939_Response(const UINT32 PGN);
 
 void J1939_Poll(void);
 void J1939_Initialization(void);
@@ -121,21 +121,21 @@ void J1939_TP_RX_Abort(void);
 void J1939_TP_DT_Packet_send(void);
 
 void J1939_read_DT_Packet(void);
-void J1939_Request_PGN(j1939_uint32_t pgn ,j1939_uint8_t DA, CAN_NODE  _Can_Node);
-void J1939_Create_Response(j1939_uint8_t data[],j1939_uint16_t dataLenght,j1939_uint32_t PGN,void (*dataUPFun)(),CAN_NODE  _Can_Node);
-void J1939_Response(const j1939_uint32_t PGN);
+void J1939_Request_PGN(UINT32 pgn ,UINT8 DA, CAN_NODE  _Can_Node);
+void J1939_Create_Response(UINT8 data[],UINT16 dataLenght,UINT32 PGN,void (*dataUPFun)(),CAN_NODE  _Can_Node);
+void J1939_Response(const UINT32 PGN);
 
-j1939_uint8_t J1939_ReceiveMessages(void);
-j1939_uint8_t J1939_TransmitMessages(void);
-j1939_uint8_t J1939_Messages_Filter(J1939_MESSAGE *MsgPtr);
-j1939_uint8_t J1939_EnqueueMessage(J1939_MESSAGE *MsgPtr, CAN_NODE  _Can_Node);
-j1939_uint8_t J1939_DequeueMessage(J1939_MESSAGE *MsgPtr, CAN_NODE  _Can_Node);
-j1939_uint8_t J1939_Read_Message(J1939_MESSAGE *MsgPtr, CAN_NODE  _Can_Node);
-j1939_uint8_t J1939_Send_Message(J1939_MESSAGE *MsgPtr, CAN_NODE  _Can_Node);
-j1939_uint8_t J1939_TP_RX_RefreshCMTimer(j1939_uint16_t dt_ms);
-j1939_uint8_t J1939_TP_TX_RefreshCMTimer(j1939_uint16_t dt_ms);
-j1939_int8_t J1939_TP_RX_Message(TP_RX_MESSAGE *msg, CAN_NODE _Can_Node);
-j1939_int8_t J1939_TP_TX_Message(j1939_uint32_t PGN,j1939_uint8_t DA,j1939_uint8_t *data,j1939_uint16_t data_num, CAN_NODE  _Can_Node);
+UINT8 J1939_ReceiveMessages(void);
+UINT8 J1939_TransmitMessages(void);
+UINT8 J1939_Messages_Filter(J1939_MESSAGE *MsgPtr);
+UINT8 J1939_EnqueueMessage(J1939_MESSAGE *MsgPtr, CAN_NODE  _Can_Node);
+UINT8 J1939_DequeueMessage(J1939_MESSAGE *MsgPtr, CAN_NODE  _Can_Node);
+UINT8 J1939_Read_Message(J1939_MESSAGE *MsgPtr, CAN_NODE  _Can_Node);
+UINT8 J1939_Send_Message(J1939_MESSAGE *MsgPtr, CAN_NODE  _Can_Node);
+UINT8 J1939_TP_RX_RefreshCMTimer(UINT16 dt_ms);
+UINT8 J1939_TP_TX_RefreshCMTimer(UINT16 dt_ms);
+INT8 J1939_TP_RX_Message(TP_RX_MESSAGE *msg, CAN_NODE _Can_Node);
+INT8 J1939_TP_TX_Message(UINT32 PGN,UINT8 DA,UINT8 *data,UINT16 data_num, CAN_NODE  _Can_Node);
 
 
 
@@ -147,9 +147,9 @@ j1939_int8_t J1939_TP_TX_Message(j1939_uint32_t PGN,j1939_uint8_t DA,j1939_uint8
 * Note:			硬件滤波器2 或 软件滤波器  滤波配置(设置PS段)
 * Return:    	NO RETURN
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/19/2019 15:43:08  WangLin	Created
 ********************************************************************/
-void SetAddressFilter(j1939_uint8_t Address)
+void SetAddressFilter(UINT8 Address)
 {   
 	/*软件滤波*/
 	#if J1939SoftwareFilterEn == J1939_TRUE
@@ -201,7 +201,7 @@ void SetAddressFilter(j1939_uint8_t Address)
 				(比如数据长度、优先级、和源地址)必须已经设置。
 * Return:		NO RETURN
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
 void SendOneMessage(J1939_MESSAGE *MsgPtr)
 {
@@ -230,11 +230,11 @@ void SendOneMessage(J1939_MESSAGE *MsgPtr)
 				需要将中断失能，在获取接受队列数据时
 * Return:		RC_SUCCESS, RC_QUEUEEMPTY
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
-j1939_uint8_t J1939_DequeueMessage( J1939_MESSAGE *MsgPtr, CAN_NODE  _Can_Node)
+UINT8 J1939_DequeueMessage( J1939_MESSAGE *MsgPtr, CAN_NODE  _Can_Node)
 {   
-    j1939_uint8_t _rc = RC_SUCCESS;
+    UINT8 _rc = RC_SUCCESS;
 
 	//***************************关接受中断********************************  
 	#if J1939_POLL_ECAN == J1939_FALSE
@@ -343,9 +343,9 @@ j1939_uint8_t J1939_DequeueMessage( J1939_MESSAGE *MsgPtr, CAN_NODE  _Can_Node)
 * note 			从接受队列中读取一个信息到*MsgPtr
 * Return:		RC_SUCCESS, RC_QUEUEEMPTY
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
-j1939_uint8_t J1939_Read_Message(J1939_MESSAGE *MsgPtr, CAN_NODE _Can_Node)
+UINT8 J1939_Read_Message(J1939_MESSAGE *MsgPtr, CAN_NODE _Can_Node)
 {
 	return J1939_DequeueMessage(MsgPtr, _Can_Node);
 }
@@ -361,11 +361,11 @@ j1939_uint8_t J1939_Read_Message(J1939_MESSAGE *MsgPtr, CAN_NODE _Can_Node)
 				RC_QUEUEFULL        发送列队满，消息入队失败 
 				RC_CANNOTTRANSMIT   系统目前不能发送消息  
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
-j1939_uint8_t J1939_EnqueueMessage(J1939_MESSAGE *MsgPtr, CAN_NODE _Can_Node)
+UINT8 J1939_EnqueueMessage(J1939_MESSAGE *MsgPtr, CAN_NODE _Can_Node)
 {   
-    j1939_uint8_t _rc = RC_SUCCESS;
+    UINT8 _rc = RC_SUCCESS;
 
 	#if J1939_POLL_ECAN == J1939_FALSE  
     	Port_TXinterruptDisable();
@@ -517,9 +517,9 @@ j1939_uint8_t J1939_EnqueueMessage(J1939_MESSAGE *MsgPtr, CAN_NODE _Can_Node)
 				RC_QUEUEFULL        发送列队满，消息入队失败 
 				RC_CANNOTTRANSMIT   系统目前不能发送消息  
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
-j1939_uint8_t J1939_Send_Message( J1939_MESSAGE *MsgPtr, CAN_NODE  _Can_Node)
+UINT8 J1939_Send_Message( J1939_MESSAGE *MsgPtr, CAN_NODE  _Can_Node)
 {
 	return J1939_EnqueueMessage(MsgPtr,_Can_Node);
 }
@@ -532,7 +532,7 @@ j1939_uint8_t J1939_Send_Message( J1939_MESSAGE *MsgPtr, CAN_NODE  _Can_Node)
 * note 			这段代码在系统初始化中被调用,(放在CAN设备初始化之后)初始化J1939全局变量
 * Return:		No Return
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
 void J1939_Initialization(void)
 {
@@ -576,11 +576,11 @@ void J1939_Initialization(void)
 	
     /*初始化请求链表*/
     REQUEST_LIST.PGN = 0;
-    REQUEST_LIST.data = J1939_NULL;
-	REQUEST_LIST.update = J1939_NULL;
+    REQUEST_LIST.data = NULL;
+	REQUEST_LIST.update = NULL;
 	REQUEST_LIST.lenght = 0;
 	REQUEST_LIST.Can_Node = Select_CAN_NODE_Null;
-	REQUEST_LIST.next = J1939_NULL;
+	REQUEST_LIST.next = NULL;
 	
     /*将TP协议置为空闲*/
 	#if J1939_TP_RX_TX
@@ -611,7 +611,7 @@ void J1939_Initialization(void)
 				首先我们要清除中断标识位        然后调用接受或者发送函数。
 * Return:		No Return
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
 #if J1939_POLL_ECAN == J1939_FALSE   
 void J1939_ISR(void)
@@ -648,7 +648,7 @@ void J1939_ISR(void)
 				如果使用中断模式，本程序将不会处理接受和发送消息，只处理地址竞争超时
 * Return:		No Return
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
 void J1939_Poll(void)
 {
@@ -694,10 +694,10 @@ void J1939_Poll(void)
 * Return:		RC_SUCCESS         消息是可以接受
 				RC_CANNOTTRANSMIT  消息是不可以接受
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
 #if J1939SoftwareFilterEn == J1939_TRUE
-j1939_uint8_t J1939_Messages_Filter(J1939_MESSAGE *MsgPtr)
+UINT8 J1939_Messages_Filter(J1939_MESSAGE *MsgPtr)
 {
     /*滤波器0*/
     if((MsgPtr->Mxe.PDUFormat) >= 240)
@@ -774,17 +774,22 @@ j1939_uint8_t J1939_Messages_Filter(J1939_MESSAGE *MsgPtr)
 * Return:		RC_SUCCESS         消息是可以接受
 				RC_CANNOTTRANSMIT  消息是不可以接受
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
-j1939_uint8_t J1939_ReceiveMessages(void) 
+UINT8 J1939_ReceiveMessages(void) 
 {
+	int ret = 0;
 	#if J1939_TP_RX_TX
-		j1939_uint32_t _pgn = 0;
+		UINT32 _pgn = 0;
 	#endif //J1939_TP_RX_TX
 
     /*从接收缓存中读取信息到OneMessage中，OneMessage是一个全局变量*/
-    /*Port_CAN_Receive函数读取到数据返回1，没有数据则返回0*/
-    if(Port_CAN_Receive(&OneMessage))
+
+	
+    /*读取CAN邮箱内的原始数据, Port_CAN_Receive函数读取到数据返回1，没有数据则返回0*/
+
+	ret = Port_CAN_Receive(&OneMessage);
+    if(ret)
     {
 		#if J1939SoftwareFilterEn == J1939_TRUE
 		    if(J1939_Messages_Filter(&OneMessage) != RC_SUCCESS)
@@ -798,9 +803,9 @@ j1939_uint8_t J1939_ReceiveMessages(void)
 			#if J1939_TP_RX_TX
 				case J1939_PF_TP_CM:       //参考J1939-21 TP多帧传输协议
 					{
-						_pgn = (j1939_uint32_t)((OneMessage.Mxe.Data[7]<<16)&0xFF0000)
-	                						+(j1939_uint32_t)((OneMessage.Mxe.Data[6]<<8)&0xFF00)
-	                						+(j1939_uint32_t)((OneMessage.Mxe.Data[5])&0xFF);
+						_pgn = (UINT32)((OneMessage.Mxe.Data[7]<<16)&0xFF0000)
+	                						+(UINT32)((OneMessage.Mxe.Data[6]<<8)&0xFF00)
+	                						+(UINT32)((OneMessage.Mxe.Data[5])&0xFF);
 						if((J1939_TP_Flags_t.state == J1939_TP_NULL) && (TP_RX_MSG.state == J1939_TP_RX_WAIT))
 						{
 							if(OneMessage.Mxe.Data[0] == 16)
@@ -809,9 +814,9 @@ j1939_uint8_t J1939_ReceiveMessages(void)
 								J1939_TP_Flags_t.TP_RX_CAN_NODE = Can_Node;
 
 								TP_RX_MSG.tp_rx_msg.SA = OneMessage.Mxe.SourceAddress;
-								TP_RX_MSG.tp_rx_msg.PGN = (j1939_uint32_t)((OneMessage.Mxe.Data[7]<<16)&0xFF0000)
-															+(j1939_uint32_t)((OneMessage.Mxe.Data[6]<<8)&0xFF00)
-															+(j1939_uint32_t)((OneMessage.Mxe.Data[5])&0xFF);
+								TP_RX_MSG.tp_rx_msg.PGN = (UINT32)((OneMessage.Mxe.Data[7]<<16)&0xFF0000)
+															+(UINT32)((OneMessage.Mxe.Data[6]<<8)&0xFF00)
+															+(UINT32)((OneMessage.Mxe.Data[5])&0xFF);
 								
 								/*如果系统繁忙*/
 								if(TP_RX_MSG.osbusy)
@@ -821,14 +826,14 @@ j1939_uint8_t J1939_ReceiveMessages(void)
 								}
 								
 								/*判断是否有足够的内存接收数据，如果没有直接，断开连接*/
-								if(((j1939_uint32_t)((OneMessage.Mxe.Data[2]<<8)&0xFF00)
-								+(j1939_uint32_t)((OneMessage.Mxe.Data[1])&0xFF)) > J1939_TP_MAX_MESSAGE_LENGTH)
+								if(((UINT32)((OneMessage.Mxe.Data[2]<<8)&0xFF00)
+								+(UINT32)((OneMessage.Mxe.Data[1])&0xFF)) > J1939_TP_MAX_MESSAGE_LENGTH)
 								{
 									TP_RX_MSG.state = J1939_TP_RX_ERROR;
 									return RC_QUEUEFULL;
 								}
-								TP_RX_MSG.tp_rx_msg.byte_count = ((j1939_uint32_t)((OneMessage.Mxe.Data[2]<<8)&0xFF00)
-								+(j1939_uint32_t)((OneMessage.Mxe.Data[1])&0xFF));
+								TP_RX_MSG.tp_rx_msg.byte_count = ((UINT32)((OneMessage.Mxe.Data[2]<<8)&0xFF00)
+								+(UINT32)((OneMessage.Mxe.Data[1])&0xFF));
 								TP_RX_MSG.packets_total = OneMessage.Mxe.Data[3];
 								TP_RX_MSG.time = J1939_TP_T2;
 								TP_RX_MSG.state = J1939_TP_RX_READ_DATA;
@@ -873,7 +878,7 @@ j1939_uint8_t J1939_ReceiveMessages(void)
 													else
 													{ /* response parameter OK */
 														TP_TX_MSG.packets_request_num = OneMessage.Mxe.Data[1];
-														TP_TX_MSG.packet_offset_p = (j1939_uint8_t)(OneMessage.Mxe.Data[2] - 1);
+														TP_TX_MSG.packet_offset_p = (UINT8)(OneMessage.Mxe.Data[2] - 1);
 														TP_TX_MSG.state = J1939_TP_TX_DT;
 													}
 												}
@@ -916,21 +921,23 @@ j1939_uint8_t J1939_ReceiveMessages(void)
 	            	{
 	            		if((TP_RX_MSG.state == J1939_TP_RX_DATA_WAIT)&&(TP_RX_MSG.tp_rx_msg.SA == OneMessage.Mxe.SourceAddress))
 		                {
-		                	TP_RX_MSG.tp_rx_msg.data[(OneMessage.Mxe.Data[0]-1)*7u]=OneMessage.Mxe.Data[1];
-		                	TP_RX_MSG.tp_rx_msg.data[(OneMessage.Mxe.Data[0]-1)*7u+1]=OneMessage.Mxe.Data[2];
-		                	TP_RX_MSG.tp_rx_msg.data[(OneMessage.Mxe.Data[0]-1)*7u+2]=OneMessage.Mxe.Data[3];
-		                	TP_RX_MSG.tp_rx_msg.data[(OneMessage.Mxe.Data[0]-1)*7u+3]=OneMessage.Mxe.Data[4];
-		                	TP_RX_MSG.tp_rx_msg.data[(OneMessage.Mxe.Data[0]-1)*7u+4]=OneMessage.Mxe.Data[5];
-		                	TP_RX_MSG.tp_rx_msg.data[(OneMessage.Mxe.Data[0]-1)*7u+5]=OneMessage.Mxe.Data[6];
-		                	TP_RX_MSG.tp_rx_msg.data[(OneMessage.Mxe.Data[0]-1)*7u+6]=OneMessage.Mxe.Data[7];
+		                	TP_RX_MSG.tp_rx_msg.data[(OneMessage.Mxe.Data[0]-1)*7u+0] = OneMessage.Mxe.Data[1];
+		                	TP_RX_MSG.tp_rx_msg.data[(OneMessage.Mxe.Data[0]-1)*7u+1] = OneMessage.Mxe.Data[2];
+		                	TP_RX_MSG.tp_rx_msg.data[(OneMessage.Mxe.Data[0]-1)*7u+2] = OneMessage.Mxe.Data[3];
+		                	TP_RX_MSG.tp_rx_msg.data[(OneMessage.Mxe.Data[0]-1)*7u+3] = OneMessage.Mxe.Data[4];
+		                	TP_RX_MSG.tp_rx_msg.data[(OneMessage.Mxe.Data[0]-1)*7u+4] = OneMessage.Mxe.Data[5];
+		                	TP_RX_MSG.tp_rx_msg.data[(OneMessage.Mxe.Data[0]-1)*7u+5] = OneMessage.Mxe.Data[6];
+		                	TP_RX_MSG.tp_rx_msg.data[(OneMessage.Mxe.Data[0]-1)*7u+6] = OneMessage.Mxe.Data[7];
+							
 							/*特殊处理重新接受已接受过的数据包*/
 		                	if((OneMessage.Mxe.Data[0]) > TP_RX_MSG.packets_ok_num)
 							{
 		                		TP_RX_MSG.packets_ok_num++;
 							}
 							TP_RX_MSG.time = J1939_TP_T1;
+							
 							/*判断是否收到偶数个数据包或者读取到最后一个数据包*/
-							if((TP_RX_MSG.packets_ok_num%2 == 0) ||(TP_RX_MSG.packets_ok_num == TP_RX_MSG.packets_total))
+							if((0 == (TP_RX_MSG.packets_ok_num % 2)) ||(TP_RX_MSG.packets_ok_num == TP_RX_MSG.packets_total))
 							{
 								TP_RX_MSG.state = J1939_TP_RX_READ_DATA;
 								break ;
@@ -949,15 +956,15 @@ j1939_uint8_t J1939_ReceiveMessages(void)
 	            		/*用OneMessage.Mxe.PGN 来存下被请求的PGN*/
 						if(OneMessage.Mxe.Data[1] < 240)
 						{
-							OneMessage.Mxe.PGN = (j1939_uint32_t)((OneMessage.Mxe.Data[2]<<16)&0x030000)
-												+(j1939_uint32_t)((OneMessage.Mxe.Data[1]<<8)&0xFF00)
+							OneMessage.Mxe.PGN = (UINT32)((OneMessage.Mxe.Data[2]<<16)&0x030000)
+												+(UINT32)((OneMessage.Mxe.Data[1]<<8)&0xFF00)
 												+0x00;
 						}
 						else
 						{
-							OneMessage.Mxe.PGN = (j1939_uint32_t)((OneMessage.Mxe.Data[2]<<16)&0x030000)
-												+(j1939_uint32_t)((OneMessage.Mxe.Data[1]<<8)&0xFF00)
-												+(j1939_uint32_t)((OneMessage.Mxe.Data[0])&0xFF);
+							OneMessage.Mxe.PGN = (UINT32)((OneMessage.Mxe.Data[2]<<16)&0x030000)
+												+(UINT32)((OneMessage.Mxe.Data[1]<<8)&0xFF00)
+												+(UINT32)((OneMessage.Mxe.Data[0])&0xFF);
 						}
 						J1939_Response(OneMessage.Mxe.PGN);
 	            	}	
@@ -968,13 +975,13 @@ j1939_uint8_t J1939_ReceiveMessages(void)
 	            		PutInReceiveQueue:
 						/*
 						if(OneMessage.Mxe.PDUFormat < 240){
-							OneMessage.Mxe.PGN = (j1939_uint32_t)((OneMessage.Array[0]<<16)&0x030000)
-												+(j1939_uint32_t)((OneMessage.Array[1]<<8)&0xFF00)
+							OneMessage.Mxe.PGN = (UINT32)((OneMessage.Array[0]<<16)&0x030000)
+												+(UINT32)((OneMessage.Array[1]<<8)&0xFF00)
 												+0x00;
 						}else{
-							OneMessage.Mxe.PGN = (j1939_uint32_t)((OneMessage.Array[0]<<16)&0x030000)
-												+(j1939_uint32_t)((OneMessage.Array[1]<<8)&0xFF00)
-												+(j1939_uint32_t)((OneMessage.Array[2])&0xFF);
+							OneMessage.Mxe.PGN = (UINT32)((OneMessage.Array[0]<<16)&0x030000)
+												+(UINT32)((OneMessage.Array[1]<<8)&0xFF00)
+												+(UINT32)((OneMessage.Array[2])&0xFF);
 						}
 						*/
 		            	if(OneMessage.Mxe.PDUFormat < 240)
@@ -1127,9 +1134,9 @@ j1939_uint8_t J1939_ReceiveMessages(void)
 * Return:		RC_SUCCESS         信息发送成功
 				RC_CANNOTTRANSMIT  系统没有发送消息,没有要发送的消息,或错误的CAN设备
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
-j1939_uint8_t J1939_TransmitMessages(void)
+UINT8 J1939_TransmitMessages(void)
 {   
 	switch (Can_Node)
 	{
@@ -1302,14 +1309,14 @@ j1939_uint8_t J1939_TransmitMessages(void)
 				
 * Return:		No Return
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
 #if J1939_TP_RX_TX
 void J1939_TP_DT_Packet_send(void)
 {
 	J1939_MESSAGE _msg;
-	j1939_uint16_t _packet_offset_p;
-	j1939_int32_t _i = 0;
+	UINT16 _packet_offset_p;
+	INT32 _i = 0;
 	
 	_msg.Mxe.Priority = J1939_TP_DT_PRIORITY;
 	_msg.Mxe.DataPage =0;
@@ -1324,12 +1331,13 @@ void J1939_TP_DT_Packet_send(void)
     	TP_TX_MSG.packets_request_num--;
 		
     	/*获取数据偏移指针*/
-    	_packet_offset_p = (j1939_uint16_t)(TP_TX_MSG.packet_offset_p*7u);
+    	_packet_offset_p = (UINT16)(TP_TX_MSG.packet_offset_p * 7u);
 		
     	/*加载数据包编号*/
-    	_msg.Mxe.Data[0] = (j1939_uint8_t)(1u + TP_TX_MSG.packet_offset_p);
+    	_msg.Mxe.Data[0] = (UINT8)(1u + TP_TX_MSG.packet_offset_p);
 
-        for(_i = 0; _i<7; _i++)
+		/*数据放入data字段*/
+        for(_i = 0; _i <7 ; _i++)
         {
         	_msg.Mxe.Data[_i+1] = TP_TX_MSG.tp_tx_msg.data[_packet_offset_p + _i];
         }
@@ -1385,11 +1393,11 @@ void J1939_TP_DT_Packet_send(void)
 				
 * Return:		No Return
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
 void J1939_CM_Start(void)
 {
-	j1939_uint32_t pgn_num;
+	UINT32 pgn_num;
 	J1939_MESSAGE _msg;
 
     pgn_num = TP_TX_MSG.tp_tx_msg.PGN;
@@ -1400,13 +1408,13 @@ void J1939_CM_Start(void)
     _msg.Mxe.DestinationAddress = TP_TX_MSG.tp_tx_msg.SA;
     _msg.Mxe.DataLength = 8;
     _msg.Mxe.Data[0] = J1939_RTS_CONTROL_BYTE;
-    _msg.Mxe.Data[1] = (j1939_uint8_t) TP_TX_MSG.tp_tx_msg.byte_count ;
-    _msg.Mxe.Data[2] = (j1939_uint8_t) ((TP_TX_MSG.tp_tx_msg.byte_count)>>8);
+    _msg.Mxe.Data[1] = (UINT8) TP_TX_MSG.tp_tx_msg.byte_count ;
+    _msg.Mxe.Data[2] = (UINT8) ((TP_TX_MSG.tp_tx_msg.byte_count)>>8);
     _msg.Mxe.Data[3] = TP_TX_MSG.packets_total;
     _msg.Mxe.Data[4] = J1939_RESERVED_BYTE;
-    _msg.Mxe.Data[7] = (j1939_uint8_t)((pgn_num>>16) & 0xff);
-    _msg.Mxe.Data[6] = (j1939_uint8_t)(pgn_num>>8 & 0xff);
-    _msg.Mxe.Data[5] = (j1939_uint8_t)(pgn_num & 0xff);
+    _msg.Mxe.Data[7] = (UINT8)((pgn_num>>16) & 0xff);
+    _msg.Mxe.Data[6] = (UINT8)(pgn_num>>8 & 0xff);
+    _msg.Mxe.Data[5] = (UINT8)(pgn_num & 0xff);
 
     /*可能队列已满，发不出去，但是这里不能靠返回值进行无限的死等*/
     J1939_EnqueueMessage(&_msg, Can_Node);
@@ -1425,12 +1433,12 @@ void J1939_CM_Start(void)
 				
 * Return:		No Return
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
 void J1939_TP_TX_Abort(void)
 {
 	J1939_MESSAGE _msg;
-	j1939_uint32_t pgn_num;
+	UINT32 pgn_num;
 
 	pgn_num = TP_TX_MSG.tp_tx_msg.PGN;
 
@@ -1444,9 +1452,9 @@ void J1939_TP_TX_Abort(void)
 	_msg.Mxe.Data[2] = J1939_RESERVED_BYTE;
 	_msg.Mxe.Data[3] = J1939_RESERVED_BYTE;
 	_msg.Mxe.Data[4] = J1939_RESERVED_BYTE;
-	_msg.Mxe.Data[7] = (j1939_uint8_t)((pgn_num>>16) & 0xff);
-	_msg.Mxe.Data[6] = (j1939_uint8_t)(pgn_num>>8 & 0xff);
-	_msg.Mxe.Data[5] = (j1939_uint8_t)(pgn_num & 0xff);
+	_msg.Mxe.Data[7] = (UINT8)((pgn_num>>16) & 0xff);
+	_msg.Mxe.Data[6] = (UINT8)(pgn_num>>8 & 0xff);
+	_msg.Mxe.Data[5] = (UINT8)(pgn_num & 0xff);
 
     /*可能队列已满，发不出去，但是这里不能靠返回值进行无限的死等*/
     J1939_EnqueueMessage(&_msg, Can_Node);
@@ -1464,12 +1472,12 @@ void J1939_TP_TX_Abort(void)
 				
 * Return:		No Return
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
 void J1939_TP_RX_Abort(void)
 {
 	J1939_MESSAGE _msg;
-	j1939_uint32_t pgn_num;
+	UINT32 pgn_num;
 
 	pgn_num = TP_RX_MSG.tp_rx_msg.PGN;
 
@@ -1483,9 +1491,9 @@ void J1939_TP_RX_Abort(void)
 	_msg.Mxe.Data[2] = J1939_RESERVED_BYTE;
 	_msg.Mxe.Data[3] = J1939_RESERVED_BYTE;
 	_msg.Mxe.Data[4] = J1939_RESERVED_BYTE;
-	_msg.Mxe.Data[7] = (j1939_uint8_t)((pgn_num>>16) & 0xff);
-	_msg.Mxe.Data[6] = (j1939_uint8_t)(pgn_num>>8 & 0xff);
-	_msg.Mxe.Data[5] = (j1939_uint8_t)(pgn_num & 0xff);
+	_msg.Mxe.Data[7] = (UINT8)((pgn_num>>16) & 0xff);
+	_msg.Mxe.Data[6] = (UINT8)(pgn_num>>8 & 0xff);
+	_msg.Mxe.Data[5] = (UINT8)(pgn_num & 0xff);
 
     /*可能队列已满，发不出去，但是这里不能靠返回值进行无限的死等*/
     J1939_EnqueueMessage(&_msg, Can_Node);
@@ -1502,11 +1510,11 @@ void J1939_TP_RX_Abort(void)
 * Parameter:	dt_ms
 * note: 		TP的计时器
 				
-* Return:		j1939_uint8_t
+* Return:		UINT8
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
-j1939_uint8_t J1939_TP_TX_RefreshCMTimer(j1939_uint16_t dt_ms)
+UINT8 J1939_TP_TX_RefreshCMTimer(UINT16 dt_ms)
 {
 	if((J1939_TP_TX_CM_WAIT == TP_TX_MSG.state)||(J1939_TP_WAIT_ACK == TP_TX_MSG.state))
 	{
@@ -1538,11 +1546,11 @@ j1939_uint8_t J1939_TP_TX_RefreshCMTimer(j1939_uint16_t dt_ms)
 * Parameter:	dt_ms
 * note: 		TP的计时器
 				
-* Return:		j1939_uint8_t
+* Return:		UINT8
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
-j1939_uint8_t J1939_TP_RX_RefreshCMTimer(j1939_uint16_t dt_ms)
+UINT8 J1939_TP_RX_RefreshCMTimer(UINT16 dt_ms)
 {
 	if((J1939_TP_RX_DATA_WAIT == TP_RX_MSG.state))
 	{
@@ -1576,12 +1584,12 @@ j1939_uint8_t J1939_TP_RX_RefreshCMTimer(j1939_uint16_t dt_ms)
 				
 * Return:		void
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
 void J1939_read_DT_Packet(void)
 {
 	J1939_MESSAGE _msg;
-	j1939_uint32_t pgn_num;
+	UINT32 pgn_num;
 	pgn_num = TP_RX_MSG.tp_rx_msg.PGN;
 
 	_msg.Mxe.Priority = J1939_TP_CM_PRIORITY;
@@ -1598,9 +1606,9 @@ void J1939_read_DT_Packet(void)
 		_msg.Mxe.Data[2] = J1939_RESERVED_BYTE;
 		_msg.Mxe.Data[3] = J1939_RESERVED_BYTE;
 		_msg.Mxe.Data[4] = J1939_RESERVED_BYTE;
-		_msg.Mxe.Data[7] = (j1939_uint8_t)((pgn_num>>16) & 0xff);
-		_msg.Mxe.Data[6] = (j1939_uint8_t)(pgn_num>>8 & 0xff);
-		_msg.Mxe.Data[5] = (j1939_uint8_t)(pgn_num & 0xff);
+		_msg.Mxe.Data[7] = (UINT8)((pgn_num>>16) & 0xff);
+		_msg.Mxe.Data[6] = (UINT8)(pgn_num>>8 & 0xff);
+		_msg.Mxe.Data[5] = (UINT8)(pgn_num & 0xff);
 		
         /*可能队列已满，发不出去，但是这里不能靠返回值进行无限的死等*/
         J1939_EnqueueMessage(&_msg, Can_Node);
@@ -1618,9 +1626,9 @@ void J1939_read_DT_Packet(void)
 			_msg.Mxe.Data[2] = TP_RX_MSG.packets_total;
 			_msg.Mxe.Data[3] = J1939_RESERVED_BYTE;
 			_msg.Mxe.Data[4] = J1939_RESERVED_BYTE;
-			_msg.Mxe.Data[7] = (j1939_uint8_t)((pgn_num>>16) & 0xff);
-			_msg.Mxe.Data[6] = (j1939_uint8_t)(pgn_num>>8 & 0xff);
-			_msg.Mxe.Data[5] = (j1939_uint8_t)(pgn_num & 0xff);
+			_msg.Mxe.Data[7] = (UINT8)((pgn_num>>16) & 0xff);
+			_msg.Mxe.Data[6] = (UINT8)(pgn_num>>8 & 0xff);
+			_msg.Mxe.Data[5] = (UINT8)(pgn_num & 0xff);
 			
             /*可能队列已满，发不出去，但是这里不能靠返回值进行无限的死等*/
             J1939_EnqueueMessage(&_msg, Can_Node);
@@ -1633,9 +1641,9 @@ void J1939_read_DT_Packet(void)
 		_msg.Mxe.Data[2] = (TP_RX_MSG.packets_ok_num + 1);
 		_msg.Mxe.Data[3] = J1939_RESERVED_BYTE;
 		_msg.Mxe.Data[4] = J1939_RESERVED_BYTE;
-		_msg.Mxe.Data[7] = (j1939_uint8_t)((pgn_num>>16) & 0xff);
-		_msg.Mxe.Data[6] = (j1939_uint8_t)(pgn_num>>8 & 0xff);
-		_msg.Mxe.Data[5] = (j1939_uint8_t)(pgn_num & 0xff);
+		_msg.Mxe.Data[7] = (UINT8)((pgn_num>>16) & 0xff);
+		_msg.Mxe.Data[6] = (UINT8)(pgn_num>>8 & 0xff);
+		_msg.Mxe.Data[5] = (UINT8)(pgn_num & 0xff);
 
         /*可能队列已满，发不出去，但是这里不能靠返回值进行无限的死等*/
         J1939_EnqueueMessage(&_msg, Can_Node);
@@ -1651,9 +1659,9 @@ void J1939_read_DT_Packet(void)
 		_msg.Mxe.Data[2] = ((TP_RX_MSG.tp_rx_msg.byte_count >> 8) & 0x00ff);
 		_msg.Mxe.Data[3] = TP_RX_MSG.packets_total;
 		_msg.Mxe.Data[4] = J1939_RESERVED_BYTE;
-		_msg.Mxe.Data[7] = (j1939_uint8_t)((pgn_num>>16) & 0xff);
-		_msg.Mxe.Data[6] = (j1939_uint8_t)(pgn_num>>8 & 0xff);
-		_msg.Mxe.Data[5] = (j1939_uint8_t)(pgn_num & 0xff);
+		_msg.Mxe.Data[7] = (UINT8)((pgn_num>>16) & 0xff);
+		_msg.Mxe.Data[6] = (UINT8)(pgn_num>>8 & 0xff);
+		_msg.Mxe.Data[5] = (UINT8)(pgn_num & 0xff);
 		
         /*可能队列已满，发不出去，但是这里不能靠返回值进行无限的死等*/
         J1939_EnqueueMessage(&_msg, Can_Node);
@@ -1672,7 +1680,7 @@ void J1939_read_DT_Packet(void)
 				如果想要更高的分辨率，1ms轮询一次，但是要改下面计时函数  J1939_TP_TX_RefreshCMTimer(1)
 * Return:		void
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
 void J1939_TP_Poll(void)
 {
@@ -1769,6 +1777,7 @@ void J1939_TP_Poll(void)
 			
 			case J1939_TP_TX_DT:
 				{
+					/*拼包拆包发送*/
 					J1939_TP_DT_Packet_send();
 				}
 	    		break;
@@ -1830,11 +1839,11 @@ void J1939_TP_Poll(void)
 				RC_CANNOTTRANSMIT 不能发送，因为TP协议已经建立虚拟链接，并且未断开
 
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
-j1939_int8_t J1939_TP_TX_Message(j1939_uint32_t PGN,j1939_uint8_t DA,j1939_uint8_t *data,j1939_uint16_t data_num, CAN_NODE  _Can_Node)
+INT8 J1939_TP_TX_Message(UINT32 PGN,UINT8 DA,UINT8 *data,UINT16 data_num, CAN_NODE  _Can_Node)
 {
-	j1939_uint16_t _byte_count = 0;
+	UINT16 _byte_count = 0;
 	
 	/*取得发送权限*/
 	if(J1939_TP_Flags_t.state == J1939_TP_NULL)
@@ -1892,11 +1901,11 @@ j1939_int8_t J1939_TP_TX_Message(j1939_uint32_t PGN,j1939_uint8_t DA,j1939_uint8
 				RC_CANNOTRECEIVE 不能接受，TP协议正在接受数据中
 				RC_SUCCESS		读取数据成功
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
-j1939_int8_t J1939_TP_RX_Message(TP_RX_MESSAGE *msg, CAN_NODE _Can_Node)
+INT8 J1939_TP_RX_Message(TP_RX_MESSAGE *msg, CAN_NODE _Can_Node)
 {
-	j1939_uint16_t _a = 0;
+	UINT16 _a = 0;
 	
 	/*判断是否能读取数据*/
 	if(J1939_TP_Flags_t.state == J1939_TP_NULL && TP_RX_MSG.tp_rx_msg.PGN != 0)
@@ -1968,9 +1977,9 @@ j1939_int8_t J1939_TP_RX_Message(TP_RX_MESSAGE *msg, CAN_NODE _Can_Node)
 * Return:		
 				No Return
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
-void J1939_Request_PGN(j1939_uint32_t pgn ,j1939_uint8_t DA, CAN_NODE  _Can_Node)
+void J1939_Request_PGN(UINT32 pgn ,UINT8 DA, CAN_NODE  _Can_Node)
 {
 	J1939_MESSAGE _msg;
 
@@ -1979,9 +1988,9 @@ void J1939_Request_PGN(j1939_uint32_t pgn ,j1939_uint8_t DA, CAN_NODE  _Can_Node
 	_msg.Mxe.DestinationAddress      = DA;
 	_msg.Mxe.DataLength              = 3;
 	_msg.Mxe.PDUFormat               = J1939_PF_REQUEST;
-	_msg.Mxe.Data[0]        		 = (j1939_uint8_t)(pgn & 0x000000FF);
-	_msg.Mxe.Data[1]        		 = (j1939_uint8_t)((pgn & 0x0000FF00) >> 8);
-	_msg.Mxe.Data[2]				 = (j1939_uint8_t)((pgn & 0x00FF0000) >> 16);
+	_msg.Mxe.Data[0]        		 = (UINT8)(pgn & 0x000000FF);
+	_msg.Mxe.Data[1]        		 = (UINT8)((pgn & 0x0000FF00) >> 8);
+	_msg.Mxe.Data[2]				 = (UINT8)((pgn & 0x00FF0000) >> 16);
 
 	while (J1939_EnqueueMessage( &_msg, _Can_Node) != RC_SUCCESS);
 }
@@ -2002,13 +2011,13 @@ void J1939_Request_PGN(j1939_uint32_t pgn ,j1939_uint8_t DA, CAN_NODE  _Can_Node
 * Return:		
 				No Return
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
-void J1939_Create_Response(j1939_uint8_t data[],j1939_uint16_t dataLenght,j1939_uint32_t PGN,void (*dataUPFun)(),CAN_NODE  _Can_Node)
+void J1939_Create_Response(UINT8 data[],UINT16 dataLenght,UINT32 PGN,void (*dataUPFun)(),CAN_NODE  _Can_Node)
 {
 	/*查找可用的链表项*/
 	struct Request_List * _requestList = &REQUEST_LIST;
-	while(J1939_NULL != _requestList->next)
+	while(NULL != _requestList->next)
 	{
 		_requestList = _requestList->next;
 	}
@@ -2021,7 +2030,7 @@ void J1939_Create_Response(j1939_uint8_t data[],j1939_uint16_t dataLenght,j1939_
 	_requestList->PGN = PGN;
 	_requestList->update = dataUPFun;
     _requestList->Can_Node = _Can_Node;
-	_requestList->next = J1939_NULL;
+	_requestList->next = NULL;
 
 }
 
@@ -2036,11 +2045,11 @@ void J1939_Create_Response(j1939_uint8_t data[],j1939_uint16_t dataLenght,j1939_
 * Return:		
 				No Return
 * History:
-*a	 21-08-2019 09:44:08	WangLin  Created
+*a	 08/21/2019 09:44:08	WangLin  Created
 ********************************************************************/
-void J1939_Response(const j1939_uint32_t PGN)
+void J1939_Response(const UINT32 PGN)
 {
-	j1939_uint8_t _i = 0;
+	UINT8 _i = 0;
 	J1939_MESSAGE _msg;
 
 	/*查找可用的链表项*/
@@ -2048,7 +2057,7 @@ void J1939_Response(const j1939_uint32_t PGN)
 	
 	while((PGN != _requestList->PGN) || (Can_Node != _requestList->Can_Node))
 	{
-		if(_requestList->next == J1939_NULL)
+		if(_requestList->next == NULL)
 		{
 			/*原文档规定 全局请求不被支持时不能响应 NACK*/
 			if(OneMessage.Mxe.PDUSpecific == J1939_GLOBAL_ADDRESS)
@@ -2088,7 +2097,7 @@ void J1939_Response(const j1939_uint32_t PGN)
 	}
 
 	/*调用dataUPFun（）函数，主要用于参数群数据更新*/
-	if(J1939_NULL != _requestList->update)
+	if(NULL != _requestList->update)
 	{
 		_requestList->update();
 	}
@@ -2217,42 +2226,3 @@ void J1939_Response(const j1939_uint32_t PGN)
 }
 #endif
 
-
-int main()
-{
-	char a = 1;
-	char b = 2;
-	char c = 4;
-	char d = 6;
-	char e = 6;
-	char temp = 2;
-
-	J1939_Initialization();
-	//SendOneMessage( sendBuf );
-
-	temp = (( 16 + 8 -1) / 8);
-
-	printf("%d ++++++++++++\n",temp);
-
-	switch (temp)
-		{
-			case 1:
-				{
-				
-				}
-				break;
-			case 2:
-				{
-					if(d = e)
-					{
-						break;
-					}
-				}
-				
-			case 3:
-				{
-				
-				}
-				break;			
-		}
-}
