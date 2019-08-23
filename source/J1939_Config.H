@@ -40,7 +40,7 @@
 #ifndef __J1939_Config_H 
 #define __J1939_Config_H 
 
-#include "J1939.H"
+#include "J1939.h"
 extern CAN_NODE   Can_Node;   //CAN硬件选择
 
 

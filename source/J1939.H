@@ -263,6 +263,27 @@ struct Request_List{
 #define J1939_MSG_LENGTH	9  //消息长度
 #define J1939_DATA_LENGTH	8  //数据长度
 
+
+
+/** j1939 的 ID 组成结构体
+*
+*/	
+struct j1939_PID
+{ 
+	j1939_uint8_t	DataPage			: 1;  /**< 数据页*/
+	j1939_uint8_t	Res 				: 1;  /**< Res位*/
+	j1939_uint8_t	Priority			: 3;  /**< 优先级*/
+	j1939_uint8_t	Reserve 			: 3;  /**< 空闲*/
+	j1939_uint8_t	PDUFormat;				  /**< PF*/
+	j1939_uint8_t	PDUSpecific;			  /**< PS*/
+	j1939_uint8_t	SourceAddress;			  /**< SA*/
+	j1939_uint8_t	DataLength			: 4;  /**< 数据长度*/
+	j1939_uint8_t	RTR 				: 4;  /**< RTR位*/
+	j1939_uint8_t	Data[J1939_DATA_LENGTH];  /**< 数据*/
+	j1939_uint32_t	PGN 				:24;  /**< 参数群编号*/
+	j1939_uint32_t	ReservePGN			: 8;  /**< 空闲*/
+};
+
 /** J1939_MESSAGE_UNION 结构体
 * 实现了J1939消息对象
 *
@@ -270,24 +291,7 @@ struct Request_List{
 */
 union J1939_MESSAGE_UNION 
 { 
-/** j1939 的 ID 组成结构体
-*
-*/
-	struct   j1939_PID
-	{ 
-		j1939_uint8_t	DataPage			: 1;  /**< 数据页*/
-		j1939_uint8_t	Res					: 1;  /**< Res位*/
-		j1939_uint8_t	Priority			: 3;  /**< 优先级*/
-		j1939_uint8_t	Reserve				: 3;  /**< 空闲*/
-		j1939_uint8_t	PDUFormat;				  /**< PF*/
-		j1939_uint8_t	PDUSpecific; 			  /**< PS*/
-		j1939_uint8_t	SourceAddress;            /**< SA*/
-		j1939_uint8_t	DataLength 			: 4;  /**< 数据长度*/
-		j1939_uint8_t	RTR					: 4;  /**< RTR位*/
-		j1939_uint8_t	Data[J1939_DATA_LENGTH];  /**< 数据*/
-		j1939_uint32_t  PGN					:24;  /**< 参数群编号*/
-		j1939_uint32_t  ReservePGN			: 8;  /**< 空闲*/
-	};
+
 	struct j1939_PID Mxe;  /**< j1939 的 ID 组成结构体*/
 	j1939_uint8_t		Array[J1939_MSG_LENGTH + J1939_DATA_LENGTH]; /**< 联合体数组，方便快速处理结构体赋值*/
 };
