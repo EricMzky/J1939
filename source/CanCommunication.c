@@ -5,6 +5,7 @@
 *File Description: Implementation of  CanCommunication.h
 *Modification History:
 *a	 08/22/2019 15:43:08  WangLin	Created
+*b	 08/26/2019 10:27:29  WangLin	增加J1939转CAN标准帧收发函数
 ********************************************************************/
 
 
@@ -33,19 +34,19 @@ void J1939_SetAddressFilter(unsigned char Ps_Address)
 {
 	switch (Can_Node)
 	{
-		case  Select_CAN_NODE_1:
+		case Select_CAN_NODE_1:
 		{
 			break;
 		}
-		case  Select_CAN_NODE_2:
+		case Select_CAN_NODE_2:
 		{
 			break;
 		}
-		case  Select_CAN_NODE_3:
+		case Select_CAN_NODE_3:
 		{
 			break;
 		}
-		case  Select_CAN_NODE_4:
+		case Select_CAN_NODE_4:
 		{
 			break;
 		}
@@ -75,69 +76,40 @@ void J1939_SetAddressFilter(unsigned char Ps_Address)
 ********************************************************************/
 void J1939_CAN_Transmit(J1939_MESSAGE *pstMsg)
 {
+	bool rcRet = false;
 	
 	switch (Can_Node)
 	{
-		case  Select_CAN_NODE_1:
-		{	
-			/*加载第一路CAN硬件的29位ID*/
-			CAN1_Send_Msg((UINT8 *)pstMsg, 8);
-
-			/*CAN硬件加载数据长度*/
-	
-			/*CAN硬件加载数据*/
-
-			/*CAN硬件加载RTR*/
-
-			//CAN硬件开始发送数据
-			
+		case Select_CAN_NODE_1:
+			{	
+				rcRet = ECU_CAN_TransmitMsg(pstMsg);
+			}
 			break;
-		}
-		case  Select_CAN_NODE_2:
-		{
-	
-			/*加载第二路CAN硬件的29位ID*/
-
-			/*CAN硬件加载数据长度*/
-	
-			/*CAN硬件加载数据*/
-
-			/*CAN硬件加载RTR*/
-
-			//CAN硬件开始发送数据
+		
+		case Select_CAN_NODE_2:
+			{	
+				rcRet = ECU_CAN_TransmitMsg(pstMsg);
+			}
 			break;
-		}
-		case  Select_CAN_NODE_3:
-		{
-			
-			/*加载第三路CAN硬件的29位ID*/
 
-			/*CAN硬件加载数据长度*/
-	
-			/*CAN硬件加载数据*/
-
-			/*CAN硬件加载RTR*/
-
-			//CAN硬件开始发送数据
+		case Select_CAN_NODE_3:
+			{	
+				rcRet = ECU_CAN_TransmitMsg(pstMsg);
+			}
 			break;
-		}
-		case  Select_CAN_NODE_4:
-		{
-			/*加载第四路CAN硬件的29位ID*/
 
-			/*CAN硬件加载数据长度*/
-	
-			/*CAN硬件加载数据*/
 
-			/*CAN硬件加载RTR*/
-
-			//CAN硬件开始发送数据
+		case Select_CAN_NODE_4:
+			{
+				rcRet = ECU_CAN_TransmitMsg(pstMsg);
+			}
 			break;
-		}
+		
 		default  :
-		{
+			{
+				
+			}
 			break;
-		}
 	}
 
 }
@@ -164,12 +136,12 @@ int J1939_CAN_Receive(J1939_MESSAGE *pstMsg)
 
 	switch (Can_Node)
 	{
-		case  Select_CAN_NODE_1:
+		case Select_CAN_NODE_1:
 			{
 				//判断CAN硬件1是否有数据到来，信号量机制
 				if(true)
 				{
-					//你的代码，从CAN硬件1 中将数据读取后，存入 pstMsg				
+					//从CAN1 中将数据读取后，存入 pstMsg				
 					ECU_CAN_ReceiveMsg(pstMsg);
 
 					
@@ -179,7 +151,7 @@ int J1939_CAN_Receive(J1939_MESSAGE *pstMsg)
 			}
 			break;
 		
-		case  Select_CAN_NODE_2:
+		case Select_CAN_NODE_2:
 			{
 				if("你的代码")//判断CAN硬件2是否有数据到来
 				{
@@ -190,7 +162,7 @@ int J1939_CAN_Receive(J1939_MESSAGE *pstMsg)
 			}
 			break;
 
-		case  Select_CAN_NODE_3:
+		case Select_CAN_NODE_3:
 			{
 				if("你的代码")//判断CAN硬件3是否有数据到来
 				{
@@ -201,7 +173,7 @@ int J1939_CAN_Receive(J1939_MESSAGE *pstMsg)
 			}
 			break;
 
-		case  Select_CAN_NODE_4:
+		case Select_CAN_NODE_4:
 			{
 				if("你的代码")//判断CAN硬件4是否有数据到来
 				{
@@ -236,7 +208,7 @@ int J1939_CAN_Receive(J1939_MESSAGE *pstMsg)
 * Return:    	TRUE->
 				FALSE->
 * History:
-*a	 08/22/2019 15:43:08  WangLin	Created
+*a	 08/25/2019 15:43:08  WangLin	Created
 ********************************************************************/
 void ECU_CAN_ReceiveMsg(J1939_MESSAGE *pstMsg)
 {
@@ -255,6 +227,55 @@ void ECU_CAN_ReceiveMsg(J1939_MESSAGE *pstMsg)
 	pstMsg->Mxe.PDUSpecific = (UINT8)((id >> 8) & 0xFF);
 	pstMsg->Mxe.SourceAddress = (UINT8)(id);
 	
+}
+
+/********************************************************************
+* Function: 	ECU_CAN_TransmitMsg
+* Description:  
+* Parameter:	[in] *pstMsg 数据要存入的内存的指针
+* Note:			
+				读取CAN驱动的数据，如果没有数据，返回0
+				将CAN中的数据取出，存入J1939_MESSAGE结构体中
+				默认支持4路CAN硬件的收发。如少于4路，只需配置相应的Can_Node开关代码区，
+				其他（Select_CAN_NODE）保持不变。就直接返回（return 0）
+
+* warning:		
+* Return:    	TRUE->
+				FALSE->
+* History:
+*a	 08/26/2019 15:43:08  WangLin	Created
+********************************************************************/
+bool ECU_CAN_TransmitMsg(J1939_MESSAGE *pstMsg)
+{	
+	UINT8 box = 0U;
+	UINT8 index = 0;
+	UINT16 i = 0;
+	UINT32 id = 0U;
+	UINT8 txMsg[8] = {0U};
+
+	//加载29Bit ID
+	id =  ((UINT32)pstMsg->Mxe.Priority   << 26)
+		+ ((UINT32)pstMsg->Mxe.PDUFormat  << 16)
+		+ ((UINT32)pstMsg->Mxe.PDUSpecific << 8)
+		+  (UINT32)pstMsg->Mxe.SourceAddress;
+	
+	//CAN硬件开始发送数据	
+	box = CAN1_Tx_Msg(id, CAN_IDE_ETD, pstMsg->Mxe.RTR, pstMsg->Mxe.DataLength, pstMsg->Mxe.Data);
+	
+	//等待发送结束
+	while((0x07 != CAN1_Tx_Staus(box)) && (i < 0XFFF))
+	{
+		//等待发送超时机制，日后替换计时器
+		i++;
+	}
+	if(i >= 0xFFF)
+	{
+		return false;	//发送失败?
+	}
+	else
+	{
+		return true;	//发送成功;
+	}
 }
 
 

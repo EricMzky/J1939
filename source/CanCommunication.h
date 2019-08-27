@@ -71,6 +71,7 @@ void J1939_SetAddressFilter(unsigned char Ps_Address);
 void J1939_CAN_Transmit(J1939_MESSAGE *pstMsg);
 int J1939_CAN_Receive(J1939_MESSAGE *pstMsg);
 void ECU_CAN_ReceiveMsg(J1939_MESSAGE *pstMsg);
+bool ECU_CAN_TransmitMsg(J1939_MESSAGE *pstMsg);
 
 
 

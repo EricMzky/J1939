@@ -16,7 +16,8 @@
 *v2.0.2:
 	*a	2018/01/03	XeiTongXueFlyMe	   	重做接受发送API，简化协议栈初始化调用逻辑
 *v2.1.0:
-	*a	2019/08/19  15:43:08 WangLin	Created
+	*a	2019/08/19  15:43:08 WangLin	Created New File
+	*b	2019/08/25  10:13:29 WangLin	修改J1939_TP_Poll J1939_Poll函数。
 ********************************************************************/
 #include <assert.h>
 
@@ -216,7 +217,7 @@ void SendOneMessage(J1939_MESSAGE *pstMsg)
     	pstMsg->Mxe.DataLength = 8;
     }
     	
-	//发送一帧消息，将 J1939_MESSAGE 中的所有消息加载道can模块自有的结构中     
+	//将J1939_MESSAGE中的所有消息转化CAN标准帧格式并发送
 	Port_CAN_Transmit(pstMsg);
 }   
 
@@ -236,7 +237,7 @@ UINT8 J1939_DequeueMessage( J1939_MESSAGE *pstMsg, CAN_NODE  _Can_Node)
 {   
     UINT8 _rc = RC_SUCCESS;
 
-	//***************************关接受中断********************************  
+	/**************************关接收中断********************************/  
 	#if J1939_POLL_ECAN == J1939_FALSE
 		Port_RXinterruptDisable();
 	#endif
@@ -328,7 +329,7 @@ UINT8 J1939_DequeueMessage( J1939_MESSAGE *pstMsg, CAN_NODE  _Can_Node)
 			break;
 	}
 	
-  	//***************************开接受中断********************************   
+  	/**************************开接受中断********************************/
 	#if J1939_POLL_ECAN == J1939_FALSE
    		Port_RXinterruptEnable();
 	#endif
@@ -582,6 +583,7 @@ void J1939_Initialization(void)
 	REQUEST_LIST.Can_Node = Select_CAN_NODE_Null;
 	REQUEST_LIST.next = NULL;
 
+	/*测试*/
 	Can_Node = Select_CAN_NODE_1;
     J1939_Address = NodeAddress_1;
 
@@ -662,6 +664,7 @@ void J1939_Poll(void)
     	J1939_Address = NodeAddress_1;
         J1939_ReceiveMessages();
         J1939_TransmitMessages();
+		
 	#if 0		
     	Can_Node = Select_CAN_NODE_2;
     	J1939_Address = NodeAddress_2;
@@ -678,10 +681,11 @@ void J1939_Poll(void)
         J1939_ReceiveMessages();
         J1939_TransmitMessages();
 	#endif
-	
+
+	/*	
 	#if J1939_TP_RX_TX
 	       J1939_TP_Poll();
-	#endif //J1939_TP_RX_TX
+	#endif //J1939_TP_RX_TX*/
 	
 #endif //J1939_POLL_ECAN == J1939_TRUE 
 }   
@@ -789,24 +793,21 @@ UINT8 J1939_ReceiveMessages(void)
 		UINT32 _pgn = 0;
 	#endif //J1939_TP_RX_TX
 
-    /*从接收缓存中读取信息到OneMessage中，OneMessage是一个全局变量*/
-
-	
+    /*从接收缓存中读取信息到OneMessage中，OneMessage是一个全局变量*/	
     /*读取CAN邮箱内的原始数据, Port_CAN_Receive函数读取到数据返回1，没有数据则返回0*/
-
 	ret = Port_CAN_Receive(&OneMessage);
 	
     if(ret)
     {
-    	/*
+    	/*软件滤波*/
 		#if J1939SoftwareFilterEn == J1939_TRUE
 		    if(J1939_Messages_Filter(&OneMessage) != RC_SUCCESS)
 		    {
 		        return RC_CANNOTRECEIVE;
 		    }
-		#endif //J1939SoftwareFilterEn*/
+		#endif //J1939SoftwareFilterEn
 		
-        switch( OneMessage.Mxe.PDUFormat)
+        switch(OneMessage.Mxe.PDUFormat)
         { 
 			#if J1939_TP_RX_TX
 				case J1939_PF_TP_CM:       //参考J1939-21 TP多帧传输协议
@@ -834,14 +835,13 @@ UINT8 J1939_ReceiveMessages(void)
 								}
 								
 								/*判断是否有足够的内存接收数据，如果没有直接，断开连接*/
-								if(((UINT32)((OneMessage.Mxe.Data[2]<<8)&0xFF00)
-								+(UINT32)((OneMessage.Mxe.Data[1])&0xFF)) > J1939_TP_MAX_MESSAGE_LENGTH)
+								if(((UINT32)((OneMessage.Mxe.Data[2]<<8)&0xFF00) + (UINT32)((OneMessage.Mxe.Data[1])&0xFF)) > J1939_TP_MAX_MESSAGE_LENGTH)
 								{
 									TP_RX_MSG.state = J1939_TP_RX_ERROR;
 									return RC_QUEUEFULL;
 								}
-								TP_RX_MSG.tp_rx_msg.byte_count = ((UINT32)((OneMessage.Mxe.Data[2]<<8)&0xFF00)
-								+(UINT32)((OneMessage.Mxe.Data[1])&0xFF));
+								
+								TP_RX_MSG.tp_rx_msg.byte_count = ((UINT32)((OneMessage.Mxe.Data[2]<<8)&0xFF00) + (UINT32)((OneMessage.Mxe.Data[1])&0xFF));
 								TP_RX_MSG.packets_total = OneMessage.Mxe.Data[3];
 								TP_RX_MSG.time = J1939_TP_T2;
 								TP_RX_MSG.state = J1939_TP_RX_READ_DATA;
@@ -1168,7 +1168,7 @@ UINT8 J1939_TransmitMessages(void)
 			            /**************可增加一个判断函数**************************/
 			        	TXQueue_1[TXHead_1].Mxe.SourceAddress = NodeAddress_1;
 
-			            SendOneMessage( (J1939_MESSAGE *) &(TXQueue_1[TXHead_1]) );
+			            SendOneMessage((J1939_MESSAGE *) &(TXQueue_1[TXHead_1]));
 			            TXHead_1++;
 						
 			            if (TXHead_1 >= J1939_TX_QUEUE_SIZE)
