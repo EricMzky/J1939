@@ -48,12 +48,8 @@ typedef double             DOUBLE;
 #define ERROR  ((INT32)(-1))    
 
 
-#define UINT32_MAX (4294967295U)		/**< UINT32 Max*/
-#define UINT16_MAX (65535U)        	/**< UINT16 Max*/
-#define UINT8_MAX  (255)          	/**< UINT8 Max*/
 #define LONG_MIN   (-2147483647L - 1)
 #define LONG_MAX   (2147483647L)
-
 
 
 #pragma  pack()

@@ -318,23 +318,26 @@ typedef enum _can_node_id
 /********************************************API**************************************************************/
 
 //初始化函数
-extern void 			J1939_Initialization( );
+void J1939_Initialization(void);
 //CAN驱动收发中断入口
-extern void			    J1939_ISR( );
+void J1939_ISR(void);
 //心跳函数,定时被调用
-extern void 			J1939_Poll( );
+void J1939_Poll(void);
+
+void J1939_TP_Poll(void);
+
 //读取单帧消息
-extern UINT8	J1939_Read_Message( J1939_MESSAGE *MsgPtr, CAN_NODE  _Can_Node);
+UINT8 J1939_Read_Message(J1939_MESSAGE *pstMsg, CAN_NODE canNode);
 //发送单帧消息
-extern UINT8  	J1939_Send_Message( J1939_MESSAGE *MsgPtr, CAN_NODE  _Can_Node);
+UINT8 J1939_Send_Message(J1939_MESSAGE *pstMsg, CAN_NODE canNode);
 //多帧（多组）消息发送函数  (RTS/CTS传输协议)
-extern INT8 	J1939_TP_TX_Message(UINT32 PGN, UINT8 DA, UINT8 *data, UINT16 data_num, CAN_NODE  _Can_Node);
+INT8 J1939_TP_TX_Message(UINT32 uwPGN, UINT8 ucDesAddr, UINT8 *pData, UINT16 usDataNum, CAN_NODE canNode);
 //多帧（多组）消息接受函数  (RTS/CTS传输协议)
-extern INT8 	J1939_TP_RX_Message(TP_RX_MESSAGE *msg, CAN_NODE _Can_Node);
+INT8 J1939_TP_RX_Message(TP_RX_MESSAGE *pstMsg , CAN_NODE canNode);
 //请求获去一个PGN
-extern void             J1939_Request_PGN(UINT32 pgn ,UINT8 DA, CAN_NODE  _Can_Node);
+void J1939_Request_PGN(UINT32 uwPGN ,UINT8 ucDesAddr, CAN_NODE canNode);
 //创建一个PGN响应
-extern void             J1939_Create_Response(UINT8 data[], UINT16 dataLenght, UINT32 PGN, void (*dataUPFun)(), CAN_NODE  _Can_Node);
+void J1939_Create_Response(UINT8 ucData[], UINT16 usDataLen, UINT32 uwPGN, void (*dataUPFun)(), CAN_NODE canNode);
 
 
 #pragma  pack()
@@ -345,4 +348,3 @@ extern void             J1939_Create_Response(UINT8 data[], UINT16 dataLenght, U
 #endif /*!defined(__J1939_H_INCLUDE_)*/
 
  
-  

@@ -10,10 +10,10 @@
 #ifndef _J1939_CONFIG_H_INCLUDE_
 #define _J1939_CONFIG_H_INCLUDE_ 
 
-
 #include "J1939.h"
 #include "DeviceCAN.h"
 #include "TypeDefineBase.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,9 +48,9 @@ extern CAN_NODE   Can_Node;   //CAN硬件选择
 #define J1939SoftwareFilterEn J1939_TRUE
 /******************************J1939移植配置函数************************/
 
-#define Port_CAN_Transmit(pstMsg) J1939_CAN_Transmit(pstMsg)
-#define Port_CAN_Receive(pstMsg) J1939_CAN_Receive(pstMsg)
-#define Port_SetAddressFilter(Address) J1939_SetAddressFilter(Address)
+#define Port_CAN_Transmit(pstMsg) CAN_J1939_Transmit(pstMsg)
+#define Port_CAN_Receive(pstMsg) CAN_J1939_Receive(pstMsg)
+#define Port_SetHardWareFilter(Address) CAN_SetHardWareFilter(Address)
 
 
 /*不使用中断模式，不对下面的函数进行移植*/
@@ -67,9 +67,9 @@ extern CAN_NODE   Can_Node;   //CAN硬件选择
 
 
 
-void J1939_SetAddressFilter(unsigned char Ps_Address);
-void J1939_CAN_Transmit(J1939_MESSAGE *pstMsg);
-int J1939_CAN_Receive(J1939_MESSAGE *pstMsg);
+void CAN_SetHardWareFilter(unsigned char Ps_Address);
+bool CAN_J1939_Transmit(J1939_MESSAGE *pstMsg);
+int CAN_J1939_Receive(J1939_MESSAGE *pstMsg);
 void ECU_CAN_ReceiveMsg(J1939_MESSAGE *pstMsg);
 bool ECU_CAN_TransmitMsg(J1939_MESSAGE *pstMsg);
 

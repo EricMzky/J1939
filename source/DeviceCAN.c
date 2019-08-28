@@ -71,26 +71,27 @@ BOOL  ECU_Can1Init(void)
 	CAN1->MCR &= ~(1<<0);			/*使能CAN1*/
 
 	while((CAN1->MSR & 1<<0) == 1);
+		
+#if 0
 
 	CAN1->FMR |= 1<<0;				/*过滤器组进入初始化状态*/
 	CAN1->FA1R = 0x0;				/*禁止过滤器组[0][1][2][3]*/
 	CAN1->FS1R = 0xF;				/*设置过滤器组[0][1][2][3]位宽为1个32位寄存器*/
 	CAN1->FM1R = 0x0;				/*设置过滤器组[0][1][2][3]工作在标识符屏蔽位模式*/
 	CAN1->FFA1R = 0xC;				/*设置过滤器组[0][1]关联到FIFO0，过滤器组[2][3]关联到FIFO1*/
-	
-#if 0
+
 	CAN1->sFilterRegister[0].FR1 = CAN_FILT_IDE_DST_ID(SYS_COMPONENT_ID_ECU_A);	/*过滤器0*/
 	CAN1->sFilterRegister[0].FR2 = CAN_FILT_MASK_DST_ID;	/*过滤器0*/
 	CAN1->sFilterRegister[1].FR1 = CAN_FILT_IDE_DST_ID(SYS_COMPONENT_ID_GROUP);  	/*过滤器1*/
 	CAN1->sFilterRegister[1].FR2 = CAN_FILT_MASK_DST_ID;	/*过滤器1*/
-	CAN1->sFilterRegister[2].FR1 =  CAN_FILT_IDE_DST_ID(SYS_COMPONENT_ID_ECU_MULTICAST);/*过滤器2*/
+	CAN1->sFilterRegister[2].FR1 = CAN_FILT_IDE_DST_ID(SYS_COMPONENT_ID_ECU_MULTICAST);/*过滤器2*/
 	CAN1->sFilterRegister[2].FR2 = CAN_FILT_MASK_DST_ID;	/*过滤器2*/	
 	CAN1->sFilterRegister[3].FR1 = 0x0;	/*过滤器3*/
 	CAN1->sFilterRegister[3].FR2 = 0x0;	/*过滤器3*/
 
-
 	CAN1->FA1R = 0xF;				/*激活过滤器组[0][1][2][3]*/
 	CAN1->FMR &= ~1;				/*过滤器组进入正常工作状态*/
+	
 #endif
 
 	CAN1->IER |= 0xE;		    	/*FIFO0消息挂号溢出满中断允许*/	    
@@ -240,7 +241,7 @@ BOOL ECU_CanRead(UINT8 canIndex,UINT8 *pFrame)
 * History:
 *a	 08/22/2019 15:43:08  WangLin	Created
 ********************************************************************/
-BOOL ECU_CanWrite(UINT8 canIndex,UINT8 *pFrame)
+BOOL ECU_CanWrite(UINT8 canIndex, UINT8 *pFrame)
 {
 	UINT16 cnt = 2000;
 	BOOL ret = FALSE;
@@ -293,8 +294,7 @@ BOOL ECU_CanWrite(UINT8 canIndex,UINT8 *pFrame)
 			cnt--;
 			if(cnt == 0)
 			{
-				ret = FALSE;
-				break;
+				return FALSE;
 			}
 		}
 	}

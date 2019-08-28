@@ -13,7 +13,7 @@
 
 
 /********************************************************************
-* Function: 	J1939_SetAddressFilter
+* Function: 	CAN_SetHardWareFilter
 * Description:  
 * Parameter:	Ps_Address
 * Note:			
@@ -30,8 +30,10 @@
 * History:
 *a	 08/22/2019 15:43:08  WangLin	Created
 ********************************************************************/
-void J1939_SetAddressFilter(unsigned char Ps_Address)
+void CAN_SetHardWareFilter(unsigned char Ps_Address)
 {
+	//在 DeviceCAN中配置硬件过滤
+#if 0
 	switch (Can_Node)
 	{
 		case Select_CAN_NODE_1:
@@ -55,11 +57,12 @@ void J1939_SetAddressFilter(unsigned char Ps_Address)
 			break;
 		}
 	}
+#endif	
 }
 
 
 /********************************************************************
-* Function: 	J1939_CAN_Transmit
+* Function: 	CAN_J1939_Transmit
 * Description:  
 * Parameter:	[in] *pstMsg 协议要发送的消息，
 * Note:			
@@ -74,7 +77,7 @@ void J1939_SetAddressFilter(unsigned char Ps_Address)
 * History:
 *a	 08/22/2019 15:43:08  WangLin	Created
 ********************************************************************/
-void J1939_CAN_Transmit(J1939_MESSAGE *pstMsg)
+bool CAN_J1939_Transmit(J1939_MESSAGE *pstMsg)
 {
 	bool rcRet = false;
 	
@@ -83,27 +86,31 @@ void J1939_CAN_Transmit(J1939_MESSAGE *pstMsg)
 		case Select_CAN_NODE_1:
 			{	
 				rcRet = ECU_CAN_TransmitMsg(pstMsg);
+
+				return rcRet;
 			}
-			break;
 		
 		case Select_CAN_NODE_2:
 			{	
 				rcRet = ECU_CAN_TransmitMsg(pstMsg);
+
+				return rcRet;
 			}
-			break;
 
 		case Select_CAN_NODE_3:
 			{	
 				rcRet = ECU_CAN_TransmitMsg(pstMsg);
+
+				return rcRet;
 			}
-			break;
 
 
 		case Select_CAN_NODE_4:
 			{
 				rcRet = ECU_CAN_TransmitMsg(pstMsg);
+
+				return rcRet;
 			}
-			break;
 		
 		default  :
 			{
@@ -112,11 +119,12 @@ void J1939_CAN_Transmit(J1939_MESSAGE *pstMsg)
 			break;
 	}
 
+	return rcRet;
 }
 
 
 /********************************************************************
-* Function: 	J1939_CAN_Receive
+* Function: 	CAN_J1939_Receive
 * Description:  
 * Parameter:	[in] *pstMsg 数据要存入的内存的指针
 * Note:			
@@ -131,9 +139,10 @@ void J1939_CAN_Transmit(J1939_MESSAGE *pstMsg)
 * History:
 *a	 08/22/2019 15:43:08  WangLin	Created
 ********************************************************************/
-int J1939_CAN_Receive(J1939_MESSAGE *pstMsg)
+int CAN_J1939_Receive(J1939_MESSAGE *pstMsg)
 {
-
+	int rcRet = 0U;
+	
 	switch (Can_Node)
 	{
 		case Select_CAN_NODE_1:
@@ -143,54 +152,67 @@ int J1939_CAN_Receive(J1939_MESSAGE *pstMsg)
 				{
 					//从CAN1 中将数据读取后，存入 pstMsg				
 					ECU_CAN_ReceiveMsg(pstMsg);
-
-					
-					return 1;
+					rcRet = 1;
 				}
-				return 0;
+				else
+				{
+					rcRet = 0;
+				}
 			}
 			break;
 		
 		case Select_CAN_NODE_2:
 			{
-				if("你的代码")//判断CAN硬件2是否有数据到来
+				if("你的代码")//判断CAN硬件4是否有数据到来
 				{
-					//你的代码，从CAN硬件2 中将数据读取后，存入 pstMsg
-					return 1;
+					//你的代码，从CAN硬件4 中将数据读取后，存入 pstMsg
+					rcRet = 1;
 				}
-				return 0;
+				else
+				{
+					rcRet = 0;
+				}
 			}
 			break;
 
+
 		case Select_CAN_NODE_3:
 			{
-				if("你的代码")//判断CAN硬件3是否有数据到来
+				if("你的代码")//判断CAN硬件4是否有数据到来
 				{
-					//你的代码，从CAN硬件3 中将数据读取后，存入 pstMsg
-					return 1;
+					//你的代码，从CAN硬件4 中将数据读取后，存入 pstMsg
+					rcRet = 1;
 				}
-				return 0;
+				else
+				{
+					rcRet = 0;
+				}
 			}
 			break;
+
+
 
 		case Select_CAN_NODE_4:
 			{
 				if("你的代码")//判断CAN硬件4是否有数据到来
 				{
 					//你的代码，从CAN硬件4 中将数据读取后，存入 pstMsg
-					return 1;
+					rcRet = 1;
 				}
-				return 0;
+				else
+				{
+					rcRet = 0;
+				}
 			}
 			break;
 
 		default  :
 		{
-			return 0;//没有消息
-			break;
+			rcRet = 0;
 		}
 	}
-	return 0;//没有消息
+	
+	return rcRet;//没有消息
 }
 
 
@@ -212,10 +234,7 @@ int J1939_CAN_Receive(J1939_MESSAGE *pstMsg)
 ********************************************************************/
 void ECU_CAN_ReceiveMsg(J1939_MESSAGE *pstMsg)
 {
-	UINT8 idType = 0U;
 	UINT8 rtrType = 0U;
-	UINT8 msgLen = 0U;
-
 	UINT32 id = 0U;
 	
 	//读取CAN原始数据
@@ -248,10 +267,8 @@ void ECU_CAN_ReceiveMsg(J1939_MESSAGE *pstMsg)
 bool ECU_CAN_TransmitMsg(J1939_MESSAGE *pstMsg)
 {	
 	UINT8 box = 0U;
-	UINT8 index = 0;
 	UINT16 i = 0;
 	UINT32 id = 0U;
-	UINT8 txMsg[8] = {0U};
 
 	//加载29Bit ID
 	id =  ((UINT32)pstMsg->Mxe.Priority   << 26)
