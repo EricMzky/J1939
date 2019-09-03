@@ -8,6 +8,8 @@
 *b	 08/26/2019 10:27:29  WangLin	增加J1939转CAN标准帧收发函数
 ********************************************************************/
 
+//注：后期补全各个函数的bool函数返回值或者自定义状态返回值，根据返回值状态执行对应分支。
+
 
 #include "CanCommunication.h"
 
@@ -147,7 +149,7 @@ int CAN_J1939_Receive(J1939_MESSAGE *pstMsg)
 	{
 		case Select_CAN_NODE_1:
 			{
-				//判断CAN硬件1是否有数据到来，信号量机制
+				//判断CAN硬件1是否有数据到来，信号量机制,测试为true
 				if(true)
 				{
 					//从CAN1 中将数据读取后，存入 pstMsg				
@@ -160,12 +162,12 @@ int CAN_J1939_Receive(J1939_MESSAGE *pstMsg)
 				}
 			}
 			break;
-		
+	#if 0	
 		case Select_CAN_NODE_2:
 			{
-				if("你的代码")//判断CAN硬件4是否有数据到来
+				if()
 				{
-					//你的代码，从CAN硬件4 中将数据读取后，存入 pstMsg
+					
 					rcRet = 1;
 				}
 				else
@@ -178,9 +180,9 @@ int CAN_J1939_Receive(J1939_MESSAGE *pstMsg)
 
 		case Select_CAN_NODE_3:
 			{
-				if("你的代码")//判断CAN硬件4是否有数据到来
+				if()
 				{
-					//你的代码，从CAN硬件4 中将数据读取后，存入 pstMsg
+			
 					rcRet = 1;
 				}
 				else
@@ -194,9 +196,9 @@ int CAN_J1939_Receive(J1939_MESSAGE *pstMsg)
 
 		case Select_CAN_NODE_4:
 			{
-				if("你的代码")//判断CAN硬件4是否有数据到来
+				if()
 				{
-					//你的代码，从CAN硬件4 中将数据读取后，存入 pstMsg
+					
 					rcRet = 1;
 				}
 				else
@@ -205,7 +207,8 @@ int CAN_J1939_Receive(J1939_MESSAGE *pstMsg)
 				}
 			}
 			break;
-
+	#endif
+		
 		default  :
 		{
 			rcRet = 0;
@@ -237,7 +240,7 @@ void ECU_CAN_ReceiveMsg(J1939_MESSAGE *pstMsg)
 	UINT8 rtrType = 0U;
 	UINT32 id = 0U;
 	
-	//读取CAN原始数据
+	//读取CAN原始数据, 后期修改接收接口，减少入参参数，整合为结构体。
 	CAN1_Rx_Msg(CAN_MAIL_BOX_0, &id, CAN_IDE_ETD, &rtrType, pstMsg->Mxe.DataLength, pstMsg->Mxe.Data);
 
 	//CAN原始ID数据转换成J1939消息帧
@@ -276,7 +279,7 @@ bool ECU_CAN_TransmitMsg(J1939_MESSAGE *pstMsg)
 		+ ((UINT32)pstMsg->Mxe.PDUSpecific << 8)
 		+  (UINT32)pstMsg->Mxe.SourceAddress;
 	
-	//CAN硬件开始发送数据	
+	//CAN硬件开始发送数据	，后期修改发送接口，减少入参参数，整合为结构体。
 	box = CAN1_Tx_Msg(id, CAN_IDE_ETD, pstMsg->Mxe.RTR, pstMsg->Mxe.DataLength, pstMsg->Mxe.Data);
 	
 	//等待发送结束
@@ -295,6 +298,9 @@ bool ECU_CAN_TransmitMsg(J1939_MESSAGE *pstMsg)
 	}
 }
 
+
+
+/******************后期根据使用去配置以下 中断函数*******************/
 
 /*不使用中断模式，不对下面的函数进行移植*/
 #if J1939_POLL_ECAN == J1939_FALSE

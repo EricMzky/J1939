@@ -27,8 +27,10 @@ static const UINT8  g_CanDevName[ECU_DEV_CAN_NUM][20] = {"can0","can1"};
 * History:
 *a	 08/22/2019 15:43:08  WangLin	Created
 ********************************************************************/
-BOOL  ECU_Can1Init(void)
+BOOL ECU_Can1Init(void)
 {
+	/*后期根据具体要求 配置波特率等数值*/
+
 	RCC->AHB1ENR|=1<<0;				/*PORTA CLOCK*/
 	
 	GPIOA->MODER &= ~(0xF<<22);		/*PA11 PA12*/
@@ -118,7 +120,8 @@ BOOL ECU_ReadCan1L2FiFoCache(UINT8 *pFrame)
 	CanFiFoCache CanFiFoL2Cache;
 	UINT32 id=0,bufh=0,bufl=0;
 	UINT8 i,ide,rtr,dlc,buf[8];
-	CanFrame_t *can=NULL;
+	
+	CanFrame_t *can = NULL;
 	
 	/*取缓存数据
 	ret = GM_MQ_Fixed_CanRead(&g_LocalCanMQ,(UINT8*)&CanFiFoL2Cache,&size);*/
@@ -128,6 +131,9 @@ BOOL ECU_ReadCan1L2FiFoCache(UINT8 *pFrame)
 		return FALSE;
 	}
 
+#if 0 
+
+	后期配置can帧结构体
 	can = (CanFrame_t*)pFrame;
 
 	/*预处理缓存数据*/
@@ -163,6 +169,7 @@ BOOL ECU_ReadCan1L2FiFoCache(UINT8 *pFrame)
 	{
 		can->MsgData[i] = buf[i];
 	}
+#endif
 
 	return TRUE;		
 }
@@ -247,9 +254,11 @@ BOOL ECU_CanWrite(UINT8 canIndex, UINT8 *pFrame)
 	BOOL ret = FALSE;
 	UINT8 i,empty_box,ide,rtr,dlc,buf[8]={0};
 	UINT32 id=0,bufh=0,bufl=0;
-	CanFrame_t *can=NULL;
+
+#if 0
+	后期整合CAN帧协议结构体
+	CanFrame_t *can=NULL;	
 	can = (CanFrame_t*)pFrame;
-	
 	id |= can->MsgHead.EndFlag << 3;
 	id |= can->MsgHead.SubIndex << 4;
 	id |= can->MsgHead.MsgIndex << 11;
@@ -274,6 +283,7 @@ BOOL ECU_CanWrite(UINT8 canIndex, UINT8 *pFrame)
 	bufl |= buf[2] << 16;
 	bufl |= buf[1] << 8;
 	bufl |= buf[0] << 0;
+#endif
 
 	while(1)
 	{

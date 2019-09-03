@@ -91,7 +91,7 @@ typedef struct _CanFrame_t
 	UINT8 MsgData[CAN_FRAME_DATA_MAX] /*__attribute__((aligned(8)))*/;
 }CanFrame_t;
 
-
+/*以上结构体后期需要重定义*/
 
 typedef struct _CanFilter_t
 {

@@ -18,7 +18,11 @@
 *v2.1.0:
 	*a	2019/08/19  15:43:08 WangLin	Created New File
 	*b	2019/08/25  10:13:29 WangLin	修改J1939_TP_Poll J1939_Poll函数;重定义各个传参命名
+	*	2019/08/27  09:07:13 WangLin	修改部分函数内容，简化结构。
 ********************************************************************/
+
+//注：后期补全各个函数的bool函数返回值或者自定义状态返回值，根据返回值状态执行对应分支。
+
 #include <assert.h>
 
 
@@ -138,7 +142,7 @@ UINT8 J1939_DequeueMessage(J1939_MESSAGE *pstMsg, CAN_NODE canNode);
 ********************************************************************/
 void J1939_SetSoftWareFilter(UINT8 Address)
 {   
-	/*软件滤波*/
+	/*软件滤波，后期添加过滤节点*/
 	#if J1939SoftwareFilterEn == J1939_TRUE
 		switch (Can_Node)
 		{
@@ -196,7 +200,7 @@ bool SendOneMessage(J1939_MESSAGE *pstMsg)
 	
 	assert(NULL != pstMsg);
 		
-    //设置消息的最后部分,确保DataLength规范(参考CAN B2.0)
+    //配置消息的数据
 	pstMsg->Mxe.Res = 0;//参考J1939的数据链路层(SAE J1939-21)
 	pstMsg->Mxe.RTR = 0;
 	
@@ -572,7 +576,7 @@ void J1939_Initialization(void)
 	REQUEST_LIST.Can_Node = Select_CAN_NODE_Null;
 	REQUEST_LIST.next = NULL;
 
-	/*测试*/
+	/*测试，默认节点*/
 	Can_Node = Select_CAN_NODE_1;
     J1939_Address = NodeAddress_1;
 
@@ -611,13 +615,12 @@ void J1939_Initialization(void)
 #if J1939_POLL_ECAN == J1939_FALSE   
 void J1939_ISR(void)
 {   
-    //判断相关标识位,是接受还是发送
-    //清除标识位
+    /*判断相关标识位,是接受还是发送，清除标识位 (后期实现，函数调用)
     Port_CAN_identifier_clc();
 	
     //调用相关的处理函数    
     J1939_ReceiveMessages();
-    J1939_TransmitMessages();
+    J1939_TransmitMessages();*/
 	
     #if J1939_TP_RX_TX
         J1939_TP_Poll();
@@ -647,7 +650,7 @@ void J1939_ISR(void)
 ********************************************************************/
 void J1939_Poll(void)
 {
-    //我们必须调用J1939_ReceiveMessages接受函数，在时间被重置为0之前。
+    //在时间被重置为0之前，必须调用J1939_ReceiveMessages接受函数
 #if J1939_POLL_ECAN == J1939_TRUE
     	Can_Node = Select_CAN_NODE_1;
     	J1939_Address = NodeAddress_1;
@@ -783,7 +786,7 @@ UINT8 J1939_ReceiveMessages(void)
 		UINT32 _pgn = 0;
 	#endif //J1939_TP_RX_TX
 
-    /*从接收缓存中读取信息到OneMessage中，OneMessage是一个全局变量*/	
+    /*从接收缓存中读取信息到OneMessage中*/	
     /*读取CAN邮箱内的原始数据, Port_CAN_Receive函数读取到数据返回1，没有数据则返回0*/
 	ret = Port_CAN_Receive(&OneMessage);
 	
@@ -817,7 +820,7 @@ UINT8 J1939_ReceiveMessages(void)
 															+(UINT32)((OneMessage.Mxe.Data[6] << 8) & 0xFF00)
 															+(UINT32)((OneMessage.Mxe.Data[5]) & 0xFF);
 								
-								/*如果系统繁忙*/
+								/*如果系统繁忙，返回RX_Error*/
 								if(TP_RX_MSG.osbusy)
 								{
 									TP_RX_MSG.state = J1939_TP_RX_ERROR;
@@ -874,7 +877,7 @@ UINT8 J1939_ReceiveMessages(void)
 														TP_TX_MSG.state = J1939_TP_TX_ERROR;
 													}
 													else
-													{ /* response parameter OK */
+													{	/*response parameter OK */
 														TP_TX_MSG.packets_request_num = OneMessage.Mxe.Data[1];
 														TP_TX_MSG.packet_offset_p = (UINT8)(OneMessage.Mxe.Data[2] - 1);
 														TP_TX_MSG.state = J1939_TP_TX_DT;
@@ -934,7 +937,7 @@ UINT8 J1939_ReceiveMessages(void)
 							TP_RX_MSG.time = J1939_TP_T1;
 							
 							/*判断是否收到偶数个数据包或者读取到最后一个数据包*/
-							if((0 == (TP_RX_MSG.packets_ok_num % 2)) ||(TP_RX_MSG.packets_ok_num == TP_RX_MSG.packets_total))
+							if((0 == (TP_RX_MSG.packets_ok_num % 2)) || (TP_RX_MSG.packets_ok_num == TP_RX_MSG.packets_total))
 							{
 								TP_RX_MSG.state = J1939_TP_RX_READ_DATA;
 								break;
@@ -1137,6 +1140,8 @@ UINT8 J1939_ReceiveMessages(void)
 ********************************************************************/
 UINT8 J1939_TransmitMessages(void)
 {
+	/*测试，Queue中有一条数据*/
+	TXQueueCount_1 = 1;
 
 	switch (Can_Node)
 	{
@@ -1170,7 +1175,7 @@ UINT8 J1939_TransmitMessages(void)
 			            TXQueueCount_1--;
 			        }
 
-			       	/*配置了一些标识位，使能中断*/
+			       	/*配置了一些标识位，使能中断，后期补充中断内容*/
 					#if J1939_POLL_ECAN == J1939_FALSE
 			        	Port_TXinterruptEnable();
 					#endif
@@ -1517,7 +1522,7 @@ void J1939_TP_RX_Abort(void)
 ********************************************************************/
 UINT8 J1939_TP_TX_RefreshCMTimer(UINT16 usMS)
 {
-	if((J1939_TP_TX_CM_WAIT == TP_TX_MSG.state)||(J1939_TP_WAIT_ACK == TP_TX_MSG.state))
+	if((J1939_TP_TX_CM_WAIT == TP_TX_MSG.state) || (J1939_TP_WAIT_ACK == TP_TX_MSG.state))
 	{
 		if(TP_TX_MSG.time > usMS)
 		{
@@ -1598,7 +1603,7 @@ void J1939_read_DT_Packet(void)
 	_msg.Mxe.DestinationAddress = TP_RX_MSG.tp_rx_msg.SA;
 	_msg.Mxe.DataLength = 8;
 
-	/*如果系统繁忙,保持链接但是不传送消息*/
+	/*获取系统状态，如果系统繁忙,保持链接但是不传送消息*/
 	if(TP_RX_MSG.osbusy)
 	{
 		_msg.Mxe.Data[0] = J1939_CTS_CONTROL_BYTE;
@@ -1678,6 +1683,7 @@ void J1939_read_DT_Packet(void)
 * Parameter:	void
 * note: 		TP协议的心跳，为了满足在总线的计时准确，10ms轮询一次   J1939_TP_TX_RefreshCMTimer(10)
 				如果想要更高的分辨率，1ms轮询一次，但是要改下面计时函数  J1939_TP_TX_RefreshCMTimer(1)
+				---后期任务调度释放信号量，配置任务周期。
 * Return:		void
 * History:
 *a	 08/21/2019 09:44:08	WangLin  Created
@@ -1721,6 +1727,7 @@ void J1939_TP_Poll(void)
 				break;
 			case J1939_TP_RX_ERROR:
 				{
+					/*异常接收，反馈*/
 					J1939_TP_RX_Abort();
 					J1939_TP_Flags_t.TP_RX_CAN_NODE = Select_CAN_NODE_Null;
 				}
@@ -1728,6 +1735,7 @@ void J1939_TP_Poll(void)
 			
 			case J1939_RX_DONE:
 				{
+					/*接收完成*/
 					TP_RX_MSG.packets_ok_num = 0;
 					TP_RX_MSG.packets_total = 0;
 					TP_RX_MSG.time = J1939_TP_T3;
@@ -1795,12 +1803,14 @@ void J1939_TP_Poll(void)
 			
 			case J1939_TP_TX_ERROR:
 				{
+					/*发送异常，报告*/
 					J1939_TP_TX_Abort();
 				}		
 	    		break;
 			
 			case J1939_TX_DONE:
 				{
+					/*发送完成*/
 					TP_TX_MSG.packets_request_num = 0;
 					TP_TX_MSG.packet_offset_p = 0;
 					TP_TX_MSG.time = J1939_TP_T3;
@@ -1845,7 +1855,7 @@ INT8 J1939_TP_TX_Message(UINT32 uwPGN, UINT8 ucDesAddr, UINT8 *pData, UINT16 usD
 {
 	UINT16 _byte_count = 0;
 	
-	/*取得发送权限*/
+	/*取得发送权限，配置对应标志位*/
 	if(J1939_TP_Flags_t.state == J1939_TP_NULL)
 	{
 		J1939_TP_Flags_t.state = J1939_TP_TX;
@@ -1908,7 +1918,7 @@ INT8 J1939_TP_RX_Message(TP_RX_MESSAGE *pstMsg , CAN_NODE canNode)
 	UINT16 _a = 0;
 	
 	/*判断是否能读取数据*/
-	if(J1939_TP_Flags_t.state == J1939_TP_NULL && TP_RX_MSG.tp_rx_msg.PGN != 0)
+	if((J1939_TP_Flags_t.state == J1939_TP_NULL) && (TP_RX_MSG.tp_rx_msg.PGN != 0))
 	{
 		J1939_TP_Flags_t.state = J1939_TP_OSBUSY;
 	}
@@ -2139,6 +2149,7 @@ void J1939_Response(const UINT32 uwPGN)
 		_msg.Mxe.Priority            = J1939_ACK_PRIORITY;
 		_msg.Mxe.DataPage            = 0;
 		_msg.Mxe.PDUFormat           = J1939_PF_ACKNOWLEDGMENT;
+		
 		/*原文档规定 全局请求响应到全局*/
 		if(OneMessage.Mxe.PDUSpecific == J1939_GLOBAL_ADDRESS)
 		{
